@@ -30,9 +30,9 @@ Used on the strategist’s machine. They paste up to five `facebook.com/ads/libr
 
 - Up to 5 Meta Ad Library URLs per run; dedupe; reject non-library URLs inline.
 - Default `limitPerUrl = 50`. Sequential URL queue, reused browser, short delay between URLs.
-- Results table is the default (not cards). Row click opens a right drawer with full body, media, links, and raw fields.
-- Filters: hook, tactic, platform, media_type, sourceUrl, active, text search. CSV exports currently filtered rows only.
-- Classification is creative-only (body + headline + CTA). One primary Motion hook; multi tactics; extra tags as specified. No fake CTR/ROAS.
+- Results table is the default (not cards). Row click opens a right drawer with full body, media, links, flattened Meta fields, classification, winner signals, and raw fields. Extra Meta columns are available from a session column picker.
+- Filters: hook, tactic, headline tactic, messaging angle, offer type, seasonality, intended audience, platform, media_type, sourceUrl, still_active, winner, creative_score / running_days ranges, and text search. CSV exports currently filtered rows only, including flattened Meta fields. Empty cells are the string `No value`.
+- Classification is creative-only (body + headline + CTA + caption + link description). One primary Motion hook; multi tactics; Motion-style tags; integer `creative_score` 0–100. `winner` is a local heuristic (score + longevity), not Ads Manager performance. No fake CTR/ROAS.
 - No Facebook login. No official `ads_archive`. No paid scrapers. Never scrape from the Vite client.
 - No silent mock-on-failure. Missing live fields stay `null`. Never invent ads to fill empty states.
 - Required empty/error states: empty input; all URLs invalid; scrape returned 0 ads; all URLs failed; classify skipped/failed (ads still visible); no rows match filters.

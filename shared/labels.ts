@@ -124,11 +124,32 @@ export const INTENDED_AUDIENCE_OPTIONS = {
 
 export const TACTIC_THRESHOLD = 0.6;
 
+export const CREATIVE_SCORE_CRITERIA = [
+  "No readable creative pattern in the copy.",
+  "Thin or generic copy with almost no hook, offer, or angle.",
+  "A weak but identifiable hook or message, poorly developed.",
+  "A clear hook or angle with ordinary supporting copy.",
+  "Strong hook, offer, or angle with coherent supporting copy.",
+  "Exceptionally tight creative pattern: hook, angle, and offer reinforce each other.",
+] as const;
+
 export const FILTER_LABELS = {
   hook: "Hook",
   tactic: "Tactic",
+  headline_tactic: "Headline Tactic",
+  messaging_angle: "Messaging Angle",
+  offer_type: "Offer Type",
+  seasonality: "Seasonality",
+  intended_audience: "Intended Audience",
   platform: "Platform",
   media_type: "Media",
   sourceUrl: "Source",
-  active: "Active",
+  still_active: "Still active",
+  winner: "Winner",
+  creative_score: "Creative score (not performance)",
+  running_days: "Running days",
 } as const;
+
+export function choiceFilterKeys(options: Record<string, string>): string[] {
+  return Object.keys(options).filter((key) => key !== "none" && key !== "unknown");
+}

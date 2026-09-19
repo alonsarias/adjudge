@@ -15,6 +15,12 @@ export type Classification = {
   seasonality: ChoiceAnswer | null;
   offer_type: ChoiceAnswer | null;
   intended_audience: ChoiceAnswer | null;
+  creative_score: number | null;
+};
+
+export type WinnerThresholds = {
+  scoreMin: number;
+  daysMin: number;
 };
 
 export type ScrapedAd = {
@@ -23,6 +29,8 @@ export type ScrapedAd = {
   page_id: string | null;
   page_name: string | null;
   is_active: boolean | null;
+  start_date: string | number | null;
+  end_date: string | number | null;
   started_at: string | null;
   stopped_at: string | null;
   body: string | null;
@@ -39,7 +47,12 @@ export type ScrapedAd = {
   video_urls: string[];
   ad_library_url: string;
   raw: Record<string, unknown> | null;
+  meta: Record<string, unknown>;
   scraped_at: string;
+  still_active: boolean | null;
+  running_days: number | null;
+  creative_score: number | null;
+  winner: boolean | null;
 };
 
 export type ClassifiedAd = ScrapedAd & {
@@ -115,4 +128,6 @@ export type ClassifyEvent = ClassifyProgress | ClassifyAdEvent | ClassifyDoneEve
 export type Health = {
   ok: boolean;
   hasTypeSafeKey: boolean;
+  winnerScoreMin: number;
+  winnerDaysMin: number;
 };

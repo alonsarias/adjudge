@@ -5,7 +5,8 @@ config();
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { classifyAd, classifySkipped } from "./classify.ts";
-import { hasTypeSafeKey } from "./env.ts";
+import { hasTypeSafeKey, winnerThresholds } from "./env.ts";
+import { applyWinnerSignals } from "../shared/winner.ts";
 import { isAdLibraryUrl, scrapeUrls } from "./scrape.ts";
 import type { ScrapedAd } from "../shared/types.ts";
 
@@ -20,12 +21,15 @@ function writeEvent(
   return stream.writeSSE({ event, data: JSON.stringify(data) });
 }
 
-app.get("/api/health", (c) =>
-  c.json({
+app.get("/api/health", (c) => {
+  const thresholds = winnerThresholds();
+  return c.json({
     ok: true,
     hasTypeSafeKey: hasTypeSafeKey(),
-  }),
-);
+    winnerScoreMin: thresholds.scoreMin,
+    winnerDaysMin: thresholds.daysMin,
+  });
+});
 
 app.post("/api/scrape", async (c) => {
   const body = (await c.req.json().catch(() => null)) as {
@@ -108,7 +112,7 @@ app.post("/api/classify", async (c) => {
           out.push(classified);
           await writeEvent(stream, "ad", { type: "ad", ad: classified });
         } catch (error) {
-          const failed = { ...ad, classification: null };
+          const failed = applyWinnerSignals({ ...ad, classification: null }, winnerThresholds());
           out.push(failed);
           await writeEvent(stream, "ad", { type: "ad", ad: failed });
           const message = error instanceof Error ? error.message : "classify failed";

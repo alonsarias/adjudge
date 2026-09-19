@@ -10,7 +10,7 @@ npx playwright install chromium
 cp .env.example .env
 ```
 
-Paste your TypeSafe key into `.env` as `TYPESAFE_API_KEY`. Never commit `.env`. Never put the key in a `VITE_*` variable — the browser never sees it.
+Paste your TypeSafe key into `.env` as `TYPESAFE_API_KEY`. Optional winner thresholds: `WINNER_SCORE_MIN` (default 70) and `WINNER_DAYS_MIN` (default 14). Never commit `.env`. Never put the key in a `VITE_*` variable — the browser never sees it.
 
 Restart `npm run dev` after saving `.env`.
 
@@ -30,7 +30,9 @@ UI and the local API start together. Open the Vite URL the script prints.
 3. Cancel keeps whatever has already been scraped.
 4. Filters and CSV apply to the **currently visible** rows only.
 
-Without `TYPESAFE_API_KEY`, scraped ads stay visible and classify is skipped with a clear banner.
+Without `TYPESAFE_API_KEY`, scraped ads stay visible and classify is skipped with a clear banner. Missing fields render as `No value` in the table, drawer, and CSV — the app never invents spend, impressions, or ROAS.
+
+`winner` is a **heuristic**, not Meta-reported performance: `creative_score >= WINNER_SCORE_MIN` and `running_days >= WINNER_DAYS_MIN`. Ad Library usually lacks spend / impressions / ROAS. If score or days is missing, `winner` is `No value`.
 
 ## Limits
 

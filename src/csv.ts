@@ -1,7 +1,8 @@
-import { serializeValue } from "../shared/serialize.ts";
+import { displayValue } from "../shared/empty.ts";
+import { collectMetaKeys } from "../shared/meta.ts";
 import type { ClassifiedAd } from "../shared/types.ts";
 
-const COLUMNS = [
+const FIXED_COLUMNS = [
   "id",
   "page_name",
   "page_id",
@@ -9,8 +10,12 @@ const COLUMNS = [
   "headline",
   "cta_text",
   "cta_type",
+  "caption",
+  "link_description",
   "platforms",
   "is_active",
+  "start_date",
+  "end_date",
   "started_at",
   "stopped_at",
   "media_type",
@@ -26,28 +31,35 @@ const COLUMNS = [
   "seasonality",
   "offer_type",
   "intended_audience",
+  "still_active",
+  "running_days",
+  "creative_score",
+  "winner",
 ] as const;
 
-function cell(ad: ClassifiedAd, key: (typeof COLUMNS)[number]): string {
+const FIXED_SET = new Set<string>(FIXED_COLUMNS);
+
+const CHOICE_KEYS = [
+  "hook",
+  "asset_type",
+  "visual_format",
+  "messaging_angle",
+  "headline_tactic",
+  "seasonality",
+  "offer_type",
+  "intended_audience",
+] as const;
+
+function cell(ad: ClassifiedAd, key: string): string {
   const classification = ad.classification;
-  switch (key) {
-    case "platforms":
-      return ad.platforms.join("; ");
-    case "hook":
-      return classification?.hook?.choice ?? "";
-    case "tactics":
-      return classification?.tactics.join("; ") ?? "";
-    case "asset_type":
-    case "visual_format":
-    case "messaging_angle":
-    case "headline_tactic":
-    case "seasonality":
-    case "offer_type":
-    case "intended_audience":
-      return classification?.[key]?.choice ?? "";
-    default:
-      return serializeValue(ad[key]);
+  if (key === "platforms") return displayValue(ad.platforms);
+  if (key === "tactics") return displayValue(classification?.tactics);
+  if ((CHOICE_KEYS as readonly string[]).includes(key)) {
+    const field = classification?.[key as (typeof CHOICE_KEYS)[number]];
+    return displayValue(field?.choice);
   }
+  if (key in ad) return displayValue(ad[key as keyof ClassifiedAd]);
+  return displayValue(ad.meta?.[key]);
 }
 
 function escapeCsv(value: string): string {
@@ -55,9 +67,15 @@ function escapeCsv(value: string): string {
   return value;
 }
 
+export function csvColumns(ads: ClassifiedAd[]): string[] {
+  const extra = collectMetaKeys(ads.map((ad) => ad.meta)).filter((key) => !FIXED_SET.has(key));
+  return [...FIXED_COLUMNS, ...extra];
+}
+
 export function adsToCsv(ads: ClassifiedAd[]): string {
-  const header = COLUMNS.join(",");
-  const rows = ads.map((ad) => COLUMNS.map((key) => escapeCsv(cell(ad, key))).join(","));
+  const columns = csvColumns(ads);
+  const header = columns.join(",");
+  const rows = ads.map((ad) => columns.map((key) => escapeCsv(cell(ad, key))).join(","));
   return [header, ...rows].join("\n");
 }
 

@@ -43,7 +43,9 @@ async function readSse<T extends { type: string }>(
 
 export async function fetchHealth(): Promise<Health> {
   const response = await fetch("/api/health");
-  if (!response.ok) return { ok: false, hasTypeSafeKey: false };
+  if (!response.ok) {
+    return { ok: false, hasTypeSafeKey: false, winnerScoreMin: 70, winnerDaysMin: 14 };
+  }
   return (await response.json()) as Health;
 }
 

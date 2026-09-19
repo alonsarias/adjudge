@@ -1,6 +1,7 @@
-import { choice, noul, TypeSafeClient } from "@typesafe-ai/sdk";
+import { choice, noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
 import {
   ASSET_TYPE_OPTIONS,
+  CREATIVE_SCORE_CRITERIA,
   HEADLINE_TACTIC_OPTIONS,
   HOOK_OPTIONS,
   INTENDED_AUDIENCE_OPTIONS,
@@ -12,7 +13,8 @@ import {
   VISUAL_FORMAT_OPTIONS,
 } from "../shared/labels.ts";
 import type { ChoiceAnswer, Classification, ClassifiedAd, ScrapedAd } from "../shared/types.ts";
-import { hasTypeSafeKey } from "./env.ts";
+import { applyWinnerSignals } from "../shared/winner.ts";
+import { hasTypeSafeKey, winnerThresholds } from "./env.ts";
 
 function tacticId(name: string): string {
   return `tactic_${name.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
@@ -33,11 +35,30 @@ const QUESTIONS = {
   ...TACTIC_QUESTIONS,
   asset_type: choice("What is the primary asset type implied by this ad?", ASSET_TYPE_OPTIONS),
   visual_format: choice("What visual format does this ad use?", VISUAL_FORMAT_OPTIONS),
-  messaging_angle: choice("What is the primary messaging angle?", MESSAGING_ANGLE_OPTIONS),
-  headline_tactic: choice("What tactic does the headline use?", HEADLINE_TACTIC_OPTIONS),
-  seasonality: choice("What seasonality does this ad copy carry?", SEASONALITY_OPTIONS),
-  offer_type: choice("What offer type is present in the copy?", OFFER_TYPE_OPTIONS),
-  intended_audience: choice("Who is the intended audience of this copy?", INTENDED_AUDIENCE_OPTIONS),
+  messaging_angle: choice(
+    "What is the one primary messaging angle across `body`, `headline`, `cta_text`, `caption`, and `link_description`? Choose none if no angle applies.",
+    MESSAGING_ANGLE_OPTIONS,
+  ),
+  headline_tactic: choice(
+    "What single tactic does `headline` use? Read `headline` first; use `body` only if the headline is empty. Choose none if no tactic applies.",
+    HEADLINE_TACTIC_OPTIONS,
+  ),
+  seasonality: choice(
+    "What seasonality cues are in `body`, `headline`, `cta_text`, `caption`, and `link_description`? Choose none if none apply.",
+    SEASONALITY_OPTIONS,
+  ),
+  offer_type: choice(
+    "What offer type is framed in `body`, `headline`, `cta_text`, `caption`, or `link_description`? Choose no_offer or none if no commercial offer is present.",
+    OFFER_TYPE_OPTIONS,
+  ),
+  intended_audience: choice(
+    "Who do `body`, `headline`, `cta_text`, `caption`, and `link_description` address? Choose none if no audience can be read.",
+    INTENDED_AUDIENCE_OPTIONS,
+  ),
+  creative_score: score(
+    "Rate the creative-only pattern strength of this Meta ad from `body`, `headline`, `cta_text`, `caption`, and `link_description`. Judge hook clarity, offer/angle coherence, and copy craft. Do not judge performance, spend, CTR, ROAS, or media production.",
+    CREATIVE_SCORE_CRITERIA,
+  ),
 };
 
 function asChoice(value: unknown): ChoiceAnswer | null {
@@ -64,12 +85,24 @@ function asNoul(value: unknown): number {
   return typeof n === "number" ? n : 0;
 }
 
+function asCreativeScore(value: unknown): number | null {
+  if (!value || typeof value !== "object") return null;
+  const n = (value as { score?: unknown }).score;
+  if (typeof n !== "number" || !Number.isFinite(n)) return null;
+  const top = CREATIVE_SCORE_CRITERIA.length - 1;
+  return Math.min(100, Math.max(0, Math.round((n / top) * 100)));
+}
+
+function withSignals(ad: ClassifiedAd): ClassifiedAd {
+  return applyWinnerSignals(ad, winnerThresholds());
+}
+
 export function classifySkipped(ads: ScrapedAd[]): ClassifiedAd[] {
-  return ads.map((ad) => ({ ...ad, classification: null }));
+  return ads.map((ad) => withSignals({ ...ad, classification: null }));
 }
 
 export async function classifyAd(ad: ScrapedAd): Promise<ClassifiedAd> {
-  if (!hasTypeSafeKey()) return { ...ad, classification: null };
+  if (!hasTypeSafeKey()) return withSignals({ ...ad, classification: null });
   const client = new TypeSafeClient();
   const response = await client.systemOne({
     state: {
@@ -77,6 +110,8 @@ export async function classifyAd(ad: ScrapedAd): Promise<ClassifiedAd> {
       headline: ad.headline ?? "",
       cta_text: ad.cta_text ?? "",
       cta_type: ad.cta_type ?? "",
+      caption: ad.caption ?? "",
+      link_description: ad.link_description ?? "",
     },
     questions: QUESTIONS,
   });
@@ -84,9 +119,9 @@ export async function classifyAd(ad: ScrapedAd): Promise<ClassifiedAd> {
   const tacticScores: Record<string, number> = {};
   const tactics: string[] = [];
   for (const name of TACTIC_OPTIONS) {
-    const score = asNoul(answers[tacticId(name)]);
-    tacticScores[name] = score;
-    if (score >= TACTIC_THRESHOLD) tactics.push(name);
+    const tacticScore = asNoul(answers[tacticId(name)]);
+    tacticScores[name] = tacticScore;
+    if (tacticScore >= TACTIC_THRESHOLD) tactics.push(name);
   }
   const classification: Classification = {
     hook: asChoice(answers.hook),
@@ -99,6 +134,7 @@ export async function classifyAd(ad: ScrapedAd): Promise<ClassifiedAd> {
     seasonality: asChoice(answers.seasonality),
     offer_type: asChoice(answers.offer_type),
     intended_audience: asChoice(answers.intended_audience),
+    creative_score: asCreativeScore(answers.creative_score),
   };
-  return { ...ad, classification };
+  return withSignals({ ...ad, classification });
 }
