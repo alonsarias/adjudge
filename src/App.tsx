@@ -7,9 +7,11 @@ import {
   INTENDED_AUDIENCE_OPTIONS,
   MESSAGING_ANGLE_OPTIONS,
   OFFER_TYPE_OPTIONS,
+  PHASE_LABELS,
   SEASONALITY_OPTIONS,
   TACTIC_OPTIONS,
   choiceFilterKeys,
+  friendlyLabel,
 } from "../shared/labels.ts";
 import {
   META_SECTIONS,
@@ -75,13 +77,7 @@ const emptyFilters = (): Filters => ({
   query: "",
 });
 
-const PHASE_LABEL: Record<Phase, string> = {
-  empty: "empty",
-  scraping: "scraping",
-  results: "results",
-  classifying: "classifying",
-  classified: "classified",
-};
+const PHASE_LABEL: Record<Phase, string> = PHASE_LABELS;
 
 const CHOICE_COLUMNS = [
   "headline_tactic",
@@ -109,11 +105,11 @@ function snippet(value: string | null, max = 96): string {
 }
 
 function formatList(values: string[]): string {
-  return displayValue(values);
+  return displayValue(values.map(friendlyLabel));
 }
 
 function choiceLabel(answer: ChoiceAnswer | null | undefined): string {
-  return displayValue(answer?.choice);
+  return answer?.choice ? friendlyLabel(answer.choice) : NO_VALUE;
 }
 
 function columnValue(ad: ClassifiedAd, key: string): unknown {
@@ -180,8 +176,9 @@ function compareRanked(
   right: ReturnType<typeof rankValue>,
 ): number {
   if ("n" in left && "n" in right) return left.n - right.n;
-  const leftText = "s" in left ? left.s : String(left.n);
-  const rightText = "s" in right ? right.s : String(right.n);
+  const leftText = "s" in left ? left.s : "n" in left ? String(left.n) : "";
+  const rightText =
+    "s" in right ? right.s : "n" in right ? String(right.n) : "";
   return leftText.localeCompare(rightText, undefined, { numeric: true });
 }
 
@@ -226,7 +223,7 @@ function Tags({ values }: { values: string[] }) {
     <>
       {values.map((value) => (
         <span key={value} className="tag">
-          {value}
+          {friendlyLabel(value)}
         </span>
       ))}
     </>
@@ -386,14 +383,14 @@ export function App() {
     setSelectedId(null);
     setClassifyError(null);
     setPhase("scraping");
-    setProgress(`URL 1/${valid.length} · opening · 0 ads`);
+    setProgress(`URL 1/${valid.length} · ${friendlyLabel("opening")} · 0 ads`);
 
     const collected: ClassifiedAd[] = [];
     try {
       await scrapeAds(valid, controller.signal, (event) => {
         if (event.type === "progress") {
           setProgress(
-            `URL ${event.urlIndex}/${event.urlCount} · ${event.phase} · ${event.adsFound} ads`,
+            `URL ${event.urlIndex}/${event.urlCount} · ${friendlyLabel(event.phase)} · ${event.adsFound} ads`,
           );
         }
         if (event.type === "ads") {
@@ -419,12 +416,12 @@ export function App() {
       });
     } catch (error) {
       if (controller.signal.aborted) {
-        setProgress("cancelled · ads kept");
+        setProgress("Cancelled · ads kept");
         setBusy(false);
         setPhase(collected.length ? "results" : "empty");
         return;
       }
-      const message = error instanceof Error ? error.message : "scrape failed";
+      const message = error instanceof Error ? error.message : "Scrape failed";
       setProgress(message);
       setBusy(false);
       setPhase(collected.length ? "results" : "empty");
@@ -440,16 +437,16 @@ export function App() {
     if (!collected.length) {
       setBusy(false);
       setPhase("empty");
-      setProgress("scrape returned 0 ads");
+      setProgress("Scrape returned 0 ads");
       return;
     }
 
     setPhase("classifying");
-    setProgress(`classifying 1/${collected.length}`);
+    setProgress(`Classifying 1/${collected.length}`);
     try {
       await classifyAds(collected, controller.signal, (event) => {
         if (event.type === "progress") {
-          setProgress(`classifying ${event.index}/${event.total}`);
+          setProgress(`Classifying ${event.index}/${event.total}`);
         }
         if (event.type === "ad") {
           setAds((current) =>
@@ -461,11 +458,11 @@ export function App() {
             setClassifyError(event.error ?? "Classification skipped.");
             setProgress(
               event.skipped
-                ? "classify skipped · ads kept"
-                : (event.error ?? "classify failed"),
+                ? "Classify skipped · ads kept"
+                : (event.error ?? "Classify failed"),
             );
           } else {
-            setProgress(`classified ${event.ads.length}`);
+            setProgress(`Classified ${event.ads.length}`);
           }
           if (event.ads.length) setAds(event.ads);
         }
@@ -474,7 +471,7 @@ export function App() {
     } catch (error) {
       if (!controller.signal.aborted) {
         const message =
-          error instanceof Error ? error.message : "classify failed";
+          error instanceof Error ? error.message : "Classify failed";
         setClassifyError(message);
       }
       setPhase("results");
@@ -588,7 +585,7 @@ export function App() {
               <span>
                 {result.ok
                   ? `${result.adCount} ads`
-                  : (result.error ?? "failed")}
+                  : friendlyLabel(result.error ?? "failed")}
               </span>
             </li>
           ))}
@@ -679,8 +676,8 @@ export function App() {
               setFilters({ ...filters, still_active })
             }
             options={[
-              { value: "yes", label: "true" },
-              { value: "no", label: "false" },
+              { value: "yes", label: "Yes" },
+              { value: "no", label: "No" },
             ]}
           />
           <FilterSelect
@@ -688,8 +685,8 @@ export function App() {
             value={filters.winner}
             onChange={(winner) => setFilters({ ...filters, winner })}
             options={[
-              { value: "yes", label: "true" },
-              { value: "no", label: "false" },
+              { value: "yes", label: "Yes" },
+              { value: "no", label: "No" },
             ]}
           />
           <label className="range">
@@ -698,7 +695,7 @@ export function App() {
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder="min"
+                placeholder="Min"
                 value={filters.scoreMin}
                 onChange={(event) =>
                   setFilters({ ...filters, scoreMin: event.target.value })
@@ -707,7 +704,7 @@ export function App() {
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder="max"
+                placeholder="Max"
                 value={filters.scoreMax}
                 onChange={(event) =>
                   setFilters({ ...filters, scoreMax: event.target.value })
@@ -721,7 +718,7 @@ export function App() {
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder="min"
+                placeholder="Min"
                 value={filters.daysMin}
                 onChange={(event) =>
                   setFilters({ ...filters, daysMin: event.target.value })
@@ -730,7 +727,7 @@ export function App() {
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder="max"
+                placeholder="Max"
                 value={filters.daysMax}
                 onChange={(event) =>
                   setFilters({ ...filters, daysMax: event.target.value })
@@ -752,7 +749,7 @@ export function App() {
                   checked={extraColumns.includes(key)}
                   onChange={() => toggleColumn(key)}
                 />
-                {key}
+                {friendlyLabel(key)}
               </label>
             ))}
           </div>
@@ -885,7 +882,7 @@ export function App() {
                 {extraColumns.map((key) => (
                   <SortHeader
                     key={key}
-                    label={key}
+                    label={friendlyLabel(key)}
                     column={`meta:${key}`}
                     sort={sort}
                     onSort={cycleSort}
@@ -923,7 +920,7 @@ export function App() {
                   <td>
                     {ad.classification?.hook?.choice ? (
                       <span className="tag">
-                        {ad.classification.hook.choice}
+                        {friendlyLabel(ad.classification.hook.choice)}
                       </span>
                     ) : (
                       <Ghost>{NO_VALUE}</Ghost>
@@ -936,7 +933,7 @@ export function App() {
                     <td key={key}>
                       {ad.classification?.[key]?.choice ? (
                         <span className="tag">
-                          {ad.classification[key]?.choice}
+                          {friendlyLabel(ad.classification[key]?.choice ?? "")}
                         </span>
                       ) : (
                         <Ghost>{NO_VALUE}</Ghost>
@@ -1039,7 +1036,8 @@ function FilterSelect({
         <option value="">All</option>
         {options.map((option) => {
           const key = typeof option === "string" ? option : option.value;
-          const text = typeof option === "string" ? option : option.label;
+          const text =
+            typeof option === "string" ? friendlyLabel(option) : option.label;
           return (
             <option key={key} value={key}>
               {text}
@@ -1096,7 +1094,7 @@ function Drawer({
           <Field label="Hook" value={choiceLabel(classification?.hook)} />
           <Field
             label="Tactics"
-            value={displayValue(classification?.tactics)}
+            value={formatList(classification?.tactics ?? [])}
           />
           <Field
             label={FILTER_LABELS.headline_tactic}
@@ -1132,9 +1130,9 @@ function Drawer({
       <section>
         <h3>Winner signals</h3>
         <p className="note">
-          Heuristic only. Winner when creative_score ≥ {scoreMin} and
-          running_days ≥ {daysMin}. Ad Library usually lacks spend / impressions
-          / ROAS.
+          Heuristic only. Winner when creative score is at least {scoreMin} and
+          running days is at least {daysMin}. Ad Library usually lacks spend,
+          impressions, and ROAS.
         </p>
         <dl>
           <Field
@@ -1160,7 +1158,7 @@ function Drawer({
             {section.keys.map((key) => (
               <Field
                 key={key}
-                label={key}
+                label={friendlyLabel(key)}
                 value={displayValue(ad.meta?.[key])}
               />
             ))}
@@ -1175,7 +1173,7 @@ function Drawer({
             {extraKeys.map((key) => (
               <Field
                 key={key}
-                label={key}
+                label={friendlyLabel(key)}
                 value={displayValue(ad.meta?.[key])}
               />
             ))}

@@ -4,7 +4,7 @@ export const DEFAULT_WINNER_SCORE_MIN = 70;
 export const DEFAULT_WINNER_DAYS_MIN = 14;
 
 export const WINNER_TOOLTIP =
-  "Heuristic: creative_score + longevity. Not Ads Manager performance.";
+  "Heuristic: creative score plus how long the ad has run. Not Ads Manager performance.";
 
 const DAY_MS = 86_400_000;
 
@@ -24,7 +24,9 @@ export function parseTimeMs(value: unknown): number | null {
   return null;
 }
 
-export function stillActiveFrom(isActive: boolean | null | undefined): boolean | null {
+export function stillActiveFrom(
+  isActive: boolean | null | undefined,
+): boolean | null {
   return typeof isActive === "boolean" ? isActive : null;
 }
 
@@ -48,7 +50,9 @@ export function winnerFrom(
   thresholds: WinnerThresholds,
 ): boolean | null {
   if (creativeScore == null || runningDays == null) return null;
-  return creativeScore >= thresholds.scoreMin && runningDays >= thresholds.daysMin;
+  return (
+    creativeScore >= thresholds.scoreMin && runningDays >= thresholds.daysMin
+  );
 }
 
 export function applyWinnerSignals<T extends ScrapedAd>(

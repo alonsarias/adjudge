@@ -1,4 +1,5 @@
 import { displayValue } from "../shared/empty.ts";
+import { friendlyLabel } from "../shared/labels.ts";
 import { collectMetaKeys } from "../shared/meta.ts";
 import type { ClassifiedAd } from "../shared/types.ts";
 
@@ -52,30 +53,42 @@ const CHOICE_KEYS = [
 
 function cell(ad: ClassifiedAd, key: string): string {
   const classification = ad.classification;
-  if (key === "platforms") return displayValue(ad.platforms);
-  if (key === "tactics") return displayValue(classification?.tactics);
+  if (key === "platforms") return displayValue(ad.platforms.map(friendlyLabel));
+  if (key === "media_type" || key === "cta_type") {
+    const value = ad[key];
+    return typeof value === "string" && value
+      ? friendlyLabel(value)
+      : displayValue(value);
+  }
+  if (key === "tactics") {
+    return displayValue((classification?.tactics ?? []).map(friendlyLabel));
+  }
   if ((CHOICE_KEYS as readonly string[]).includes(key)) {
     const field = classification?.[key as (typeof CHOICE_KEYS)[number]];
-    return displayValue(field?.choice);
+    return field?.choice ? friendlyLabel(field.choice) : displayValue(null);
   }
   if (key in ad) return displayValue(ad[key as keyof ClassifiedAd]);
   return displayValue(ad.meta?.[key]);
 }
 
 function escapeCsv(value: string): string {
-  if (/[",\n]/.test(value)) return `"${value.replaceAll("\"", "\"\"")}"`;
+  if (/[",\n]/.test(value)) return `"${value.replaceAll('"', '""')}"`;
   return value;
 }
 
 export function csvColumns(ads: ClassifiedAd[]): string[] {
-  const extra = collectMetaKeys(ads.map((ad) => ad.meta)).filter((key) => !FIXED_SET.has(key));
+  const extra = collectMetaKeys(ads.map((ad) => ad.meta)).filter(
+    (key) => !FIXED_SET.has(key),
+  );
   return [...FIXED_COLUMNS, ...extra];
 }
 
 export function adsToCsv(ads: ClassifiedAd[]): string {
   const columns = csvColumns(ads);
-  const header = columns.join(",");
-  const rows = ads.map((ad) => columns.map((key) => escapeCsv(cell(ad, key))).join(","));
+  const header = columns.map(friendlyLabel).join(",");
+  const rows = ads.map((ad) =>
+    columns.map((key) => escapeCsv(cell(ad, key))).join(","),
+  );
   return [header, ...rows].join("\n");
 }
 

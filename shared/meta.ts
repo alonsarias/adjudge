@@ -59,7 +59,7 @@ export const KNOWN_META_KEYS = [
 
 export const META_SECTIONS: { title: string; keys: readonly string[] }[] = [
   {
-    title: "Identity / page",
+    title: "Identity and page",
     keys: [
       "ad_archive_id",
       "ad_id",
@@ -73,8 +73,15 @@ export const META_SECTIONS: { title: string; keys: readonly string[] }[] = [
     ],
   },
   {
-    title: "Status / time",
-    keys: ["is_active", "start_date", "end_date", "start_date_iso", "end_date_iso", "total_active_time"],
+    title: "Status and time",
+    keys: [
+      "is_active",
+      "start_date",
+      "end_date",
+      "start_date_iso",
+      "end_date_iso",
+      "total_active_time",
+    ],
   },
   {
     title: "Creative",
@@ -101,7 +108,7 @@ export const META_SECTIONS: { title: string; keys: readonly string[] }[] = [
     ],
   },
   {
-    title: "Distribution / money / reach / misc",
+    title: "Distribution, spend, and reach",
     keys: [
       "publisher_platform",
       "targeted_or_reached_countries",
@@ -130,7 +137,9 @@ export const META_SECTIONS: { title: string; keys: readonly string[] }[] = [
   },
 ];
 
-const SECTION_KEY_SET = new Set(META_SECTIONS.flatMap((section) => [...section.keys]));
+const SECTION_KEY_SET = new Set(
+  META_SECTIONS.flatMap((section) => [...section.keys]),
+);
 
 export const PRIMARY_TABLE_IDS = [
   "thumb",
@@ -241,7 +250,9 @@ export function flattenMeta(
   return out;
 }
 
-export function collectMetaKeys(metas: Array<Record<string, unknown> | null | undefined>): string[] {
+export function collectMetaKeys(
+  metas: Array<Record<string, unknown> | null | undefined>,
+): string[] {
   const extras: string[] = [];
   const seen = new Set<string>(KNOWN_META_KEYS);
   for (const meta of metas) {
@@ -256,7 +267,9 @@ export function collectMetaKeys(metas: Array<Record<string, unknown> | null | un
   return [...KNOWN_META_KEYS, ...extras];
 }
 
-export function pickerKeys(metas: Array<Record<string, unknown> | null | undefined>): string[] {
+export function pickerKeys(
+  metas: Array<Record<string, unknown> | null | undefined>,
+): string[] {
   return collectMetaKeys(metas).filter((key) => !PICKER_SKIP.has(key));
 }
 

@@ -1,6 +1,7 @@
 export const HOOK_OPTIONS = {
   Contrarian: "Opens by rejecting a common belief or expected take.",
-  "Identity Call-Out": "Names a specific person, role, or in-group in the opener.",
+  "Identity Call-Out":
+    "Names a specific person, role, or in-group in the opener.",
   Confession: "Opens as an admission, secret, or behind-the-scenes reveal.",
   "Pain Agitation": "Opens by pressing a felt problem before any offer.",
   "Curiosity Gap": "Opens with incomplete information the viewer must resolve.",
@@ -136,11 +137,11 @@ export const CREATIVE_SCORE_CRITERIA = [
 export const FILTER_LABELS = {
   hook: "Hook",
   tactic: "Tactic",
-  headline_tactic: "Headline Tactic",
-  messaging_angle: "Messaging Angle",
-  offer_type: "Offer Type",
+  headline_tactic: "Headline tactic",
+  messaging_angle: "Messaging angle",
+  offer_type: "Offer type",
   seasonality: "Seasonality",
-  intended_audience: "Intended Audience",
+  intended_audience: "Intended audience",
   platform: "Platform",
   media_type: "Media",
   sourceUrl: "Source",
@@ -150,6 +151,154 @@ export const FILTER_LABELS = {
   running_days: "Running days",
 } as const;
 
+export const PHASE_LABELS = {
+  empty: "Empty",
+  scraping: "Scraping",
+  results: "Results",
+  classifying: "Classifying",
+  classified: "Classified",
+} as const;
+
+export const SCRAPE_PHASE_LABELS = {
+  opening: "Opening",
+  ssr: "Reading the page",
+  scrolling: "Scrolling",
+  done: "Done",
+  failed: "Failed",
+} as const;
+
+const FIELD_LABELS: Record<string, string> = {
+  ...FILTER_LABELS,
+  id: "ID",
+  page: "Page",
+  page_name: "Page",
+  page_id: "Page ID",
+  thumb: "Thumb",
+  body: "Body",
+  headline: "Headline",
+  cta: "CTA",
+  cta_text: "CTA",
+  cta_type: "CTA type",
+  caption: "Caption",
+  link_description: "Link description",
+  platforms: "Platforms",
+  is_active: "Active",
+  start_date: "Start date",
+  end_date: "End date",
+  started_at: "Started",
+  stopped_at: "Stopped",
+  source_url: "Source",
+  ad_library_url: "Ad Library URL",
+  link_url: "Outbound link",
+  tactics: "Tactics",
+  asset_type: "Asset type",
+  visual_format: "Visual format",
+  thumb_url: "Thumbnail URL",
+  start_date_iso: "Start date (ISO)",
+  end_date_iso: "End date (ISO)",
+  "body.text": "Body text",
+  page_profile_uri: "Page profile URL",
+  page_profile_picture_url: "Page profile picture URL",
+};
+
+const VALUE_LABELS: Record<string, string> = {
+  ...PHASE_LABELS,
+  ...SCRAPE_PHASE_LABELS,
+  dco: "DCO",
+  ugc: "UGC",
+  FOMO: "FOMO",
+  fomo: "FOMO",
+  how_to: "How to",
+  before_after: "Before / after",
+  no_offer: "No offer",
+  social_proof: "Social proof",
+  text_on_screen: "Text on screen",
+  talking_head: "Talking head",
+  product_demo: "Product demo",
+  sale_event: "Sale event",
+  existing_customers: "Existing customers",
+  lookalike_demo: "Named demographic",
+  retarget: "Retargeting",
+  none: "None",
+  unknown: "Unknown",
+  true: "Yes",
+  false: "No",
+  yes: "Yes",
+  no: "No",
+  failed: "Failed",
+  cancelled: "Cancelled",
+  "scrape returned 0 ads": "Scrape returned 0 ads",
+  "scrape failed": "Scrape failed",
+  "classify failed": "Classify failed",
+  FACEBOOK: "Facebook",
+  INSTAGRAM: "Instagram",
+  MESSENGER: "Messenger",
+  AUDIENCE_NETWORK: "Audience Network",
+  THREADS: "Threads",
+  facebook: "Facebook",
+  instagram: "Instagram",
+  messenger: "Messenger",
+  audience_network: "Audience Network",
+  threads: "Threads",
+};
+
+const ACRONYMS = new Set([
+  "id",
+  "url",
+  "uri",
+  "cta",
+  "ugc",
+  "dco",
+  "iso",
+  "csv",
+  "api",
+  "html",
+  "roas",
+  "ctr",
+  "fev",
+  "fomo",
+]);
+
 export function choiceFilterKeys(options: Record<string, string>): string[] {
-  return Object.keys(options).filter((key) => key !== "none" && key !== "unknown");
+  return Object.keys(options).filter(
+    (key) => key !== "none" && key !== "unknown",
+  );
+}
+
+export function labeledOptions(
+  values: readonly string[],
+): Array<{ value: string; label: string }> {
+  return values.map((value) => ({ value, label: friendlyLabel(value) }));
+}
+
+export function choiceFilterOptions(
+  options: Record<string, string>,
+): Array<{ value: string; label: string }> {
+  return labeledOptions(choiceFilterKeys(options));
+}
+
+export function friendlyLabel(value: string): string {
+  const exact = FIELD_LABELS[value] ?? VALUE_LABELS[value];
+  if (exact) return exact;
+  if (isLiteralValue(value)) return value;
+  return humanizeKey(value);
+}
+
+function isLiteralValue(value: string): boolean {
+  if (/^https?:\/\//i.test(value) || value.includes("://")) return true;
+  if (/\s/.test(value)) return value === value.trim();
+  return /[A-Z]/.test(value) && /[a-z]/.test(value) && !/[._\[\]]/.test(value);
+}
+
+function humanizeKey(value: string): string {
+  const tokens = value.split(/[._\[\]]+/).filter(Boolean);
+  if (!tokens.length) return value;
+  return tokens.map(humanizeToken).join(" ");
+}
+
+function humanizeToken(token: string): string {
+  const lower = token.toLowerCase();
+  if (ACRONYMS.has(lower)) return lower.toUpperCase();
+  if (/^\d+$/.test(token)) return token;
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
