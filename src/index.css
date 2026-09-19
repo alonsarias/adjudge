@@ -210,6 +210,60 @@ button:disabled {
   border-bottom: 1px solid #ddd;
 }
 
+.results th {
+  padding: 0;
+  white-space: nowrap;
+}
+
+.results th button {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.results th button:hover .sort-mark .idle,
+.results th button:focus-visible .sort-mark .idle {
+  opacity: 0.55;
+}
+
+.results th button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: -2px;
+}
+
+.sort-mark {
+  width: 8px;
+  height: 12px;
+  flex: none;
+  pointer-events: none;
+}
+
+.sort-mark path {
+  fill: currentColor;
+}
+
+.sort-mark .idle {
+  opacity: 0.28;
+}
+
+.sort-mark .on {
+  opacity: 1;
+}
+
+.sort-mark .off {
+  opacity: 0.16;
+}
+
 .results tbody tr {
   cursor: pointer;
 }
@@ -243,10 +297,6 @@ button:disabled {
 
 .ghost {
   color: #666;
-}
-
-.results th {
-  white-space: nowrap;
 }
 
 .drawer {

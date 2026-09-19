@@ -11,8 +11,17 @@ import {
   TACTIC_OPTIONS,
   choiceFilterKeys,
 } from "../shared/labels.ts";
-import { META_SECTIONS, pickerKeys, unsectionedMetaKeys } from "../shared/meta.ts";
-import type { ChoiceAnswer, ClassifiedAd, Health, UrlResult } from "../shared/types.ts";
+import {
+  META_SECTIONS,
+  pickerKeys,
+  unsectionedMetaKeys,
+} from "../shared/meta.ts";
+import type {
+  ChoiceAnswer,
+  ClassifiedAd,
+  Health,
+  UrlResult,
+} from "../shared/types.ts";
 import {
   DEFAULT_WINNER_DAYS_MIN,
   DEFAULT_WINNER_SCORE_MIN,
@@ -23,6 +32,8 @@ import { downloadCsv } from "./csv.ts";
 import { isAdLibraryUrl } from "../shared/urls.ts";
 
 type Phase = "empty" | "scraping" | "results" | "classifying" | "classified";
+type SortDir = "asc" | "desc";
+type SortState = { key: string; dir: SortDir };
 
 type Filters = {
   hook: string;
@@ -105,6 +116,92 @@ function choiceLabel(answer: ChoiceAnswer | null | undefined): string {
   return displayValue(answer?.choice);
 }
 
+function columnValue(ad: ClassifiedAd, key: string): unknown {
+  switch (key) {
+    case "thumb":
+      return ad.thumb_url;
+    case "page":
+      return ad.page_name || ad.id;
+    case "body":
+      return ad.body;
+    case "headline":
+      return ad.headline;
+    case "cta":
+      return ad.cta_text;
+    case "platforms":
+      return ad.platforms;
+    case "hook":
+      return ad.classification?.hook?.choice;
+    case "tactics":
+      return ad.classification?.tactics;
+    case "headline_tactic":
+      return ad.classification?.headline_tactic?.choice;
+    case "messaging_angle":
+      return ad.classification?.messaging_angle?.choice;
+    case "offer_type":
+      return ad.classification?.offer_type?.choice;
+    case "seasonality":
+      return ad.classification?.seasonality?.choice;
+    case "intended_audience":
+      return ad.classification?.intended_audience?.choice;
+    case "still_active":
+      return ad.still_active;
+    case "running_days":
+      return ad.running_days;
+    case "creative_score":
+      return ad.creative_score;
+    case "winner":
+      return ad.winner;
+    default:
+      return key.startsWith("meta:") ? ad.meta?.[key.slice(5)] : null;
+  }
+}
+
+function rankValue(
+  value: unknown,
+): { empty: true } | { empty: false; n: number } | { empty: false; s: string } {
+  if (isEmptyValue(value)) return { empty: true };
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return { empty: false, n: value };
+  }
+  if (typeof value === "boolean") return { empty: false, n: value ? 1 : 0 };
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed !== "" && Number.isFinite(Number(trimmed))) {
+      return { empty: false, n: Number(trimmed) };
+    }
+    return { empty: false, s: trimmed.toLowerCase() };
+  }
+  return { empty: false, s: displayValue(value).toLowerCase() };
+}
+
+function compareRanked(
+  left: ReturnType<typeof rankValue>,
+  right: ReturnType<typeof rankValue>,
+): number {
+  if ("n" in left && "n" in right) return left.n - right.n;
+  const leftText = "s" in left ? left.s : String(left.n);
+  const rightText = "s" in right ? right.s : String(right.n);
+  return leftText.localeCompare(rightText, undefined, { numeric: true });
+}
+
+function sortAds(ads: ClassifiedAd[], sort: SortState | null): ClassifiedAd[] {
+  if (!sort) return ads;
+  return ads
+    .map((ad, index) => ({ ad, index }))
+    .sort((a, b) => {
+      const left = rankValue(columnValue(a.ad, sort.key));
+      const right = rankValue(columnValue(b.ad, sort.key));
+      if (left.empty && right.empty) return a.index - b.index;
+      if (left.empty) return 1;
+      if (right.empty) return -1;
+      const cmp = compareRanked(left, right);
+      if (cmp !== 0) return sort.dir === "asc" ? cmp : -cmp;
+      return a.index - b.index;
+    })
+    .map((item) => item.ad);
+}
+
 function inRange(value: number | null, min: string, max: string): boolean {
   if (min === "" && max === "") return true;
   if (value == null) return false;
@@ -148,6 +245,7 @@ export function App() {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [extraColumns, setExtraColumns] = useState<string[]>([]);
+  const [sort, setSort] = useState<SortState | null>(null);
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -232,6 +330,8 @@ export function App() {
     });
   }, [ads, filters]);
 
+  const visible = useMemo(() => sortAds(filtered, sort), [filtered, sort]);
+
   function stop() {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -239,11 +339,25 @@ export function App() {
   }
 
   function toggleColumn(key: string) {
-    setExtraColumns((current) =>
-      current.includes(key)
+    setExtraColumns((current) => {
+      const next = current.includes(key)
         ? current.filter((item) => item !== key)
-        : [...current, key],
-    );
+        : [...current, key];
+      if (!next.includes(key)) {
+        setSort((currentSort) =>
+          currentSort?.key === `meta:${key}` ? null : currentSort,
+        );
+      }
+      return next;
+    });
+  }
+
+  function cycleSort(key: string) {
+    setSort((current) => {
+      if (current?.key !== key) return { key, dir: "asc" };
+      if (current.dir === "asc") return { key, dir: "desc" };
+      return null;
+    });
   }
 
   async function run() {
@@ -428,8 +542,8 @@ export function App() {
           <button
             type="button"
             className="export"
-            onClick={() => downloadCsv(filtered)}
-            disabled={!filtered.length}
+            onClick={() => downloadCsv(visible)}
+            disabled={!visible.length}
           >
             CSV
           </button>
@@ -664,30 +778,123 @@ export function App() {
           <table className="results">
             <thead>
               <tr>
-                <th>Thumb</th>
-                <th>Page</th>
-                <th>Body</th>
-                <th>Headline</th>
-                <th>CTA</th>
-                <th>Platforms</th>
-                <th>Hook</th>
-                <th>Tactics</th>
-                <th>{FILTER_LABELS.headline_tactic}</th>
-                <th>{FILTER_LABELS.messaging_angle}</th>
-                <th>{FILTER_LABELS.offer_type}</th>
-                <th>{FILTER_LABELS.seasonality}</th>
-                <th>{FILTER_LABELS.intended_audience}</th>
-                <th>{FILTER_LABELS.still_active}</th>
-                <th>{FILTER_LABELS.running_days}</th>
-                <th title={WINNER_TOOLTIP}>{FILTER_LABELS.creative_score}</th>
-                <th title={WINNER_TOOLTIP}>{FILTER_LABELS.winner}</th>
+                <SortHeader
+                  label="Thumb"
+                  column="thumb"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="Page"
+                  column="page"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="Body"
+                  column="body"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="Headline"
+                  column="headline"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="CTA"
+                  column="cta"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="Platforms"
+                  column="platforms"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="Hook"
+                  column="hook"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label="Tactics"
+                  column="tactics"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.headline_tactic}
+                  column="headline_tactic"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.messaging_angle}
+                  column="messaging_angle"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.offer_type}
+                  column="offer_type"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.seasonality}
+                  column="seasonality"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.intended_audience}
+                  column="intended_audience"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.still_active}
+                  column="still_active"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.running_days}
+                  column="running_days"
+                  sort={sort}
+                  onSort={cycleSort}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.creative_score}
+                  column="creative_score"
+                  sort={sort}
+                  onSort={cycleSort}
+                  title={WINNER_TOOLTIP}
+                />
+                <SortHeader
+                  label={FILTER_LABELS.winner}
+                  column="winner"
+                  sort={sort}
+                  onSort={cycleSort}
+                  title={WINNER_TOOLTIP}
+                />
                 {extraColumns.map((key) => (
-                  <th key={key}>{key}</th>
+                  <SortHeader
+                    key={key}
+                    label={key}
+                    column={`meta:${key}`}
+                    sort={sort}
+                    onSort={cycleSort}
+                  />
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((ad) => (
+              {visible.map((ad) => (
                 <tr
                   key={ad.id}
                   className={ad.id === selectedId ? "selected" : undefined}
@@ -764,6 +971,56 @@ export function App() {
   );
 }
 
+function SortHeader({
+  label,
+  column,
+  sort,
+  onSort,
+  title,
+}: {
+  label: string;
+  column: string;
+  sort: SortState | null;
+  onSort: (column: string) => void;
+  title?: string;
+}) {
+  const active = sort?.key === column;
+  const dir = active ? sort.dir : null;
+  const ariaSort = !dir ? "none" : dir === "asc" ? "ascending" : "descending";
+  const state =
+    dir === "asc"
+      ? "sorted ascending"
+      : dir === "desc"
+        ? "sorted descending"
+        : "not sorted";
+  return (
+    <th scope="col" aria-sort={ariaSort} title={title}>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        aria-label={`${label}, ${state}. Activate to sort.`}
+      >
+        <span>{label}</span>
+        <svg
+          className="sort-mark"
+          viewBox="0 0 8 12"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            className={dir === "asc" ? "on" : dir ? "off" : "idle"}
+            d="M4 1.2 7.2 5.4H.8Z"
+          />
+          <path
+            className={dir === "desc" ? "on" : dir ? "off" : "idle"}
+            d="M4 10.8 7.2 6.6H.8Z"
+          />
+        </svg>
+      </button>
+    </th>
+  );
+}
+
 function FilterSelect({
   label,
   value,
@@ -778,10 +1035,7 @@ function FilterSelect({
   return (
     <label>
       <span>{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">All</option>
         {options.map((option) => {
           const key = typeof option === "string" ? option : option.value;
@@ -819,9 +1073,7 @@ function Drawer({
       <h2>{displayValue(ad.page_name)}</h2>
       <Thumb url={ad.thumb_url} name={ad.page_name ?? ad.id} large />
       {ad.video_urls[0] ? (
-        <p className="note">
-          Video URL on file. Poster shown; CDN may expire.
-        </p>
+        <p className="note">Video URL on file. Poster shown; CDN may expire.</p>
       ) : null}
       <p className="body">{displayValue(ad.body)}</p>
       <p>
@@ -842,7 +1094,10 @@ function Drawer({
         <h3>Classification</h3>
         <dl>
           <Field label="Hook" value={choiceLabel(classification?.hook)} />
-          <Field label="Tactics" value={displayValue(classification?.tactics)} />
+          <Field
+            label="Tactics"
+            value={displayValue(classification?.tactics)}
+          />
           <Field
             label={FILTER_LABELS.headline_tactic}
             value={choiceLabel(classification?.headline_tactic)}
@@ -882,8 +1137,14 @@ function Drawer({
           / ROAS.
         </p>
         <dl>
-          <Field label={FILTER_LABELS.still_active} value={displayValue(ad.still_active)} />
-          <Field label={FILTER_LABELS.running_days} value={displayValue(ad.running_days)} />
+          <Field
+            label={FILTER_LABELS.still_active}
+            value={displayValue(ad.still_active)}
+          />
+          <Field
+            label={FILTER_LABELS.running_days}
+            value={displayValue(ad.running_days)}
+          />
           <Field
             label={FILTER_LABELS.creative_score}
             value={displayValue(ad.creative_score)}
@@ -897,7 +1158,11 @@ function Drawer({
           <h3>{section.title}</h3>
           <dl>
             {section.keys.map((key) => (
-              <Field key={key} label={key} value={displayValue(ad.meta?.[key])} />
+              <Field
+                key={key}
+                label={key}
+                value={displayValue(ad.meta?.[key])}
+              />
             ))}
           </dl>
         </section>
@@ -908,7 +1173,11 @@ function Drawer({
           <h3>Other Meta fields</h3>
           <dl>
             {extraKeys.map((key) => (
-              <Field key={key} label={key} value={displayValue(ad.meta?.[key])} />
+              <Field
+                key={key}
+                label={key}
+                value={displayValue(ad.meta?.[key])}
+              />
             ))}
           </dl>
         </section>
