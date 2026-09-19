@@ -1,70 +1,139 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { FILTER_LABELS, HOOK_OPTIONS, TACTIC_OPTIONS } from "../shared/labels.ts";
-import type { ClassifiedAd, Health, UrlResult } from "../shared/types.ts";
+import { displayValue, isEmptyValue, NO_VALUE } from "../shared/empty.ts";
+import {
+  FILTER_LABELS,
+  HEADLINE_TACTIC_OPTIONS,
+  HOOK_OPTIONS,
+  INTENDED_AUDIENCE_OPTIONS,
+  MESSAGING_ANGLE_OPTIONS,
+  OFFER_TYPE_OPTIONS,
+  SEASONALITY_OPTIONS,
+  TACTIC_OPTIONS,
+  choiceFilterKeys,
+} from "../shared/labels.ts";
+import { META_SECTIONS, pickerKeys, unsectionedMetaKeys } from "../shared/meta.ts";
+import type { ChoiceAnswer, ClassifiedAd, Health, UrlResult } from "../shared/types.ts";
+import {
+  DEFAULT_WINNER_DAYS_MIN,
+  DEFAULT_WINNER_SCORE_MIN,
+  WINNER_TOOLTIP,
+} from "../shared/winner.ts";
 import { classifyAds, fetchHealth, scrapeAds } from "./api.ts";
 import { downloadCsv } from "./csv.ts";
 import { isAdLibraryUrl } from "../shared/urls.ts";
 
-type Phase = "empty" | "pulling" | "holdings" | "tagging" | "tagged";
+type Phase = "empty" | "scraping" | "results" | "classifying" | "classified";
 
 type Filters = {
   hook: string;
   tactic: string;
+  headline_tactic: string;
+  messaging_angle: string;
+  offer_type: string;
+  seasonality: string;
+  intended_audience: string;
   platform: string;
   media_type: string;
   sourceUrl: string;
-  active: string;
+  still_active: string;
+  winner: string;
+  scoreMin: string;
+  scoreMax: string;
+  daysMin: string;
+  daysMax: string;
   query: string;
 };
 
 const emptyFilters = (): Filters => ({
   hook: "",
   tactic: "",
+  headline_tactic: "",
+  messaging_angle: "",
+  offer_type: "",
+  seasonality: "",
+  intended_audience: "",
   platform: "",
   media_type: "",
   sourceUrl: "",
-  active: "",
+  still_active: "",
+  winner: "",
+  scoreMin: "",
+  scoreMax: "",
+  daysMin: "",
+  daysMax: "",
   query: "",
 });
 
 const PHASE_LABEL: Record<Phase, string> = {
-  empty: "empty wall",
-  pulling: "pulling",
-  holdings: "on the wall",
-  tagging: "tagging",
-  tagged: "tagged",
+  empty: "empty",
+  scraping: "scraping",
+  results: "results",
+  classifying: "classifying",
+  classified: "classified",
 };
 
-const CHIP_TONES = ["forest", "steel", "violet", "brick"] as const;
-
-function chipTone(value: string): (typeof CHIP_TONES)[number] {
-  let n = 0;
-  for (const ch of value) n += ch.charCodeAt(0);
-  return CHIP_TONES[n % CHIP_TONES.length];
-}
+const CHOICE_COLUMNS = [
+  "headline_tactic",
+  "messaging_angle",
+  "offer_type",
+  "seasonality",
+  "intended_audience",
+] as const;
 
 function parseLines(value: string): string[] {
-  return [...new Set(value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      value
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 function snippet(value: string | null, max = 96): string {
-  if (!value) return "—";
-  return value.length > max ? `${value.slice(0, max).trim()}…` : value;
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toISOString().slice(0, 10);
+  if (isEmptyValue(value)) return NO_VALUE;
+  const text = value as string;
+  return text.length > max ? `${text.slice(0, max).trim()}…` : text;
 }
 
 function formatList(values: string[]): string {
-  return values.length ? values.join(" · ") : "—";
+  return displayValue(values);
 }
 
-function padCount(value: number): string {
-  return String(value).padStart(3, "0");
+function choiceLabel(answer: ChoiceAnswer | null | undefined): string {
+  return displayValue(answer?.choice);
+}
+
+function inRange(value: number | null, min: string, max: string): boolean {
+  if (min === "" && max === "") return true;
+  if (value == null) return false;
+  if (min !== "") {
+    const low = Number(min);
+    if (Number.isFinite(low) && value < low) return false;
+  }
+  if (max !== "") {
+    const high = Number(max);
+    if (Number.isFinite(high) && value > high) return false;
+  }
+  return true;
+}
+
+function Ghost({ children }: { children: ReactNode }) {
+  return <span className="ghost">{children}</span>;
+}
+
+function Tags({ values }: { values: string[] }) {
+  if (!values.length) return <Ghost>{NO_VALUE}</Ghost>;
+  return (
+    <>
+      {values.map((value) => (
+        <span key={value} className="tag">
+          {value}
+        </span>
+      ))}
+    </>
+  );
 }
 
 export function App() {
@@ -78,6 +147,7 @@ export function App() {
   const [inputError, setInputError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [extraColumns, setExtraColumns] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -105,24 +175,54 @@ export function App() {
     [ads],
   );
   const mediaTypes = useMemo(
-    () => [...new Set(ads.map((ad) => ad.media_type).filter((item): item is string => Boolean(item)))].sort(),
+    () =>
+      [
+        ...new Set(
+          ads
+            .map((ad) => ad.media_type)
+            .filter((item): item is string => Boolean(item)),
+        ),
+      ].sort(),
     [ads],
   );
   const sources = useMemo(
     () => [...new Set(ads.map((ad) => ad.sourceUrl))].sort(),
     [ads],
   );
+  const availableExtra = useMemo(
+    () => pickerKeys(ads.map((ad) => ad.meta)),
+    [ads],
+  );
 
   const filtered = useMemo(() => {
     const q = filters.query.trim().toLowerCase();
     return ads.filter((ad) => {
-      if (filters.hook && ad.classification?.hook?.choice !== filters.hook) return false;
-      if (filters.tactic && !ad.classification?.tactics.includes(filters.tactic)) return false;
-      if (filters.platform && !ad.platforms.includes(filters.platform)) return false;
-      if (filters.media_type && ad.media_type !== filters.media_type) return false;
+      if (filters.hook && ad.classification?.hook?.choice !== filters.hook)
+        return false;
+      if (
+        filters.tactic &&
+        !ad.classification?.tactics.includes(filters.tactic)
+      )
+        return false;
+      for (const key of CHOICE_COLUMNS) {
+        if (filters[key] && ad.classification?.[key]?.choice !== filters[key])
+          return false;
+      }
+      if (filters.platform && !ad.platforms.includes(filters.platform))
+        return false;
+      if (filters.media_type && ad.media_type !== filters.media_type)
+        return false;
       if (filters.sourceUrl && ad.sourceUrl !== filters.sourceUrl) return false;
-      if (filters.active === "yes" && ad.is_active !== true) return false;
-      if (filters.active === "no" && ad.is_active !== false) return false;
+      if (filters.still_active === "yes" && ad.still_active !== true)
+        return false;
+      if (filters.still_active === "no" && ad.still_active !== false)
+        return false;
+      if (filters.winner === "yes" && ad.winner !== true) return false;
+      if (filters.winner === "no" && ad.winner !== false) return false;
+      if (!inRange(ad.creative_score, filters.scoreMin, filters.scoreMax))
+        return false;
+      if (!inRange(ad.running_days, filters.daysMin, filters.daysMax))
+        return false;
       if (!q) return true;
       const hay = [ad.page_name, ad.body, ad.headline, ad.cta_text, ad.id]
         .filter(Boolean)
@@ -138,6 +238,14 @@ export function App() {
     setBusy(false);
   }
 
+  function toggleColumn(key: string) {
+    setExtraColumns((current) =>
+      current.includes(key)
+        ? current.filter((item) => item !== key)
+        : [...current, key],
+    );
+  }
+
   async function run() {
     setInputError(null);
     if (!draft.trim()) {
@@ -150,7 +258,9 @@ export function App() {
       return;
     }
     if (invalid.length) {
-      setInputError("Non-library URLs were ignored. Only Ad Library links can run.");
+      setInputError(
+        "Non-library URLs were ignored. Only Ad Library links can run.",
+      );
     }
 
     abortRef.current?.abort();
@@ -161,7 +271,7 @@ export function App() {
     setResults([]);
     setSelectedId(null);
     setClassifyError(null);
-    setPhase("pulling");
+    setPhase("scraping");
     setProgress(`URL 1/${valid.length} · opening · 0 ads`);
 
     const collected: ClassifiedAd[] = [];
@@ -173,14 +283,19 @@ export function App() {
           );
         }
         if (event.type === "ads") {
-          const next = event.ads.map((ad) => ({ ...ad, classification: null }));
+          const next = event.ads.map((ad) => ({
+            ...ad,
+            classification: null,
+          }));
           collected.push(...next);
           setAds([...collected]);
-          if (next.length) setPhase("holdings");
+          if (next.length) setPhase("results");
         }
         if (event.type === "url") {
           setResults((current) => {
-            const rest = current.filter((item) => item.url !== event.result.url);
+            const rest = current.filter(
+              (item) => item.url !== event.result.url,
+            );
             return [...rest, event.result];
           });
         }
@@ -190,21 +305,21 @@ export function App() {
       });
     } catch (error) {
       if (controller.signal.aborted) {
-        setProgress("cancelled · boxes kept");
+        setProgress("cancelled · ads kept");
         setBusy(false);
-        setPhase(collected.length ? "holdings" : "empty");
+        setPhase(collected.length ? "results" : "empty");
         return;
       }
       const message = error instanceof Error ? error.message : "scrape failed";
       setProgress(message);
       setBusy(false);
-      setPhase(collected.length ? "holdings" : "empty");
+      setPhase(collected.length ? "results" : "empty");
       return;
     }
 
     if (controller.signal.aborted) {
       setBusy(false);
-      setPhase(collected.length ? "holdings" : "empty");
+      setPhase(collected.length ? "results" : "empty");
       return;
     }
 
@@ -215,7 +330,7 @@ export function App() {
       return;
     }
 
-    setPhase("tagging");
+    setPhase("classifying");
     setProgress(`classifying 1/${collected.length}`);
     try {
       await classifyAds(collected, controller.signal, (event) => {
@@ -230,45 +345,54 @@ export function App() {
         if (event.type === "done") {
           if (event.skipped || event.error) {
             setClassifyError(event.error ?? "Classification skipped.");
-            setProgress(event.skipped ? "classify skipped · boxes kept" : event.error ?? "classify failed");
+            setProgress(
+              event.skipped
+                ? "classify skipped · ads kept"
+                : (event.error ?? "classify failed"),
+            );
           } else {
             setProgress(`classified ${event.ads.length}`);
           }
           if (event.ads.length) setAds(event.ads);
         }
       });
-      setPhase("tagged");
+      setPhase("classified");
     } catch (error) {
       if (!controller.signal.aborted) {
-        const message = error instanceof Error ? error.message : "classify failed";
+        const message =
+          error instanceof Error ? error.message : "classify failed";
         setClassifyError(message);
       }
-      setPhase("holdings");
+      setPhase("results");
     } finally {
       setBusy(false);
       abortRef.current = null;
     }
   }
 
-  const allFailed = results.length > 0 && results.every((item) => !item.ok) && ads.length === 0;
-  const emptyHoldings = !busy && ads.length === 0 && results.length > 0;
+  const allFailed =
+    results.length > 0 && results.every((item) => !item.ok) && ads.length === 0;
+  const emptyResults = !busy && ads.length === 0 && results.length > 0;
   const noFilterMatch = ads.length > 0 && filtered.length === 0;
+  const scoreMin = health?.winnerScoreMin ?? DEFAULT_WINNER_SCORE_MIN;
+  const daysMin = health?.winnerDaysMin ?? DEFAULT_WINNER_DAYS_MIN;
 
   return (
-    <div className="wall">
-      <header className="mast">
-        <div className="brand">
+    <div className="app">
+      <header className="header">
+        <div>
           <h1>adjudge</h1>
-          <p className="lede">Public Ad Library lots, pulled onto the wall.</p>
+          <p className="lede">
+            Paste Ad Library URLs. Scrape real ads. Classify. Filter. Export.
+          </p>
         </div>
         <div>
-          <p className="size-run" aria-label={`${ads.length} ads on the wall`}>
-            {padCount(filtered.length)}
-            <span aria-hidden="true"> / {padCount(ads.length)}</span>
+          <p className="count" aria-label={`${ads.length} ads`}>
+            {filtered.length} / {ads.length}
           </p>
-          <p className={`phase phase-${phase}`} data-phase={phase}>
-            <span className="stamp">{PHASE_LABEL[phase]}</span>
-            {progress ? <span>{progress}</span> : null}
+          <p className="phase">
+            <span>{PHASE_LABEL[phase]}</span>
+            {progress ? <span> · {progress}</span> : null}
           </p>
         </div>
       </header>
@@ -285,10 +409,20 @@ export function App() {
           />
         </label>
         <div className="actions">
-          <button type="button" className="run" onClick={() => void run()} disabled={busy}>
+          <button
+            type="button"
+            className="run"
+            onClick={() => void run()}
+            disabled={busy}
+          >
             Run
           </button>
-          <button type="button" className="cancel" onClick={stop} disabled={!busy}>
+          <button
+            type="button"
+            className="cancel"
+            onClick={stop}
+            disabled={!busy}
+          >
             Cancel
           </button>
           <button
@@ -300,7 +434,9 @@ export function App() {
             CSV
           </button>
         </div>
-        {overflow ? <p className="note">Only the first 5 unique URLs will run.</p> : null}
+        {overflow ? (
+          <p className="note">Only the first 5 unique URLs will run.</p>
+        ) : null}
         {invalid.length ? (
           <ul className="inline-errors">
             {invalid.map((url) => (
@@ -311,151 +447,221 @@ export function App() {
         {inputError ? <p className="banner warn">{inputError}</p> : null}
         {classifyError ? <p className="banner warn">{classifyError}</p> : null}
         {health && !health.hasTypeSafeKey && !classifyError ? (
-          <p className="banner blink">
-            TypeSafe key missing. Boxes stay visible; classify will skip.
+          <p className="banner">
+            TypeSafe key missing. Ads stay visible; classify will skip.
           </p>
         ) : null}
       </section>
 
-      <ol className="chips" aria-label="URL stacks">
+      <ol className="slots" aria-label="URL slots">
         {Array.from({ length: 5 }, (_, index) => {
           const result = results[index];
-          const className = result ? (result.ok ? "lit" : "struck") : "";
+          const className = result ? (result.ok ? "ok" : "fail") : "";
           return (
             <li key={index} className={className}>
-              <span className="swatch" />
-              <span className="code">STACK {String(index + 1).padStart(2, "0")}</span>
+              URL {String(index + 1).padStart(2, "0")}
             </li>
           );
         })}
       </ol>
 
       {results.length ? (
-        <ol className="stacks">
+        <ol className="url-results">
           {results.map((result, index) => (
             <li key={result.url} className={result.ok ? "ok" : "fail"}>
-              <span className="code">STACK {String(index + 1).padStart(2, "0")}</span>
+              <span>URL {String(index + 1).padStart(2, "0")}</span>
               <span className="url">{result.url}</span>
-              <span className="mark">
-                {result.ok ? `${result.adCount} ads` : result.error ?? "failed"}
+              <span>
+                {result.ok
+                  ? `${result.adCount} ads`
+                  : (result.error ?? "failed")}
               </span>
             </li>
           ))}
         </ol>
       ) : null}
 
-      <section className="colorway">
+      <section className="filters">
         <label className="search">
-          <span>Search colorway</span>
+          <span>Search</span>
           <input
             value={filters.query}
-            onChange={(event) => setFilters({ ...filters, query: event.target.value })}
+            onChange={(event) =>
+              setFilters({ ...filters, query: event.target.value })
+            }
           />
         </label>
         <div className="dials">
-        <label>
-          <span>{FILTER_LABELS.hook}</span>
-          <select
+          <FilterSelect
+            label={FILTER_LABELS.hook}
             value={filters.hook}
-            onChange={(event) => setFilters({ ...filters, hook: event.target.value })}
-          >
-            <option value="">All</option>
-            {Object.keys(HOOK_OPTIONS)
-              .filter((key) => key !== "none")
-              .map((key) => (
-                <option key={key} value={key}>
-                  {key}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label>
-          <span>{FILTER_LABELS.tactic}</span>
-          <select
+            onChange={(hook) => setFilters({ ...filters, hook })}
+            options={choiceFilterKeys(HOOK_OPTIONS)}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.tactic}
             value={filters.tactic}
-            onChange={(event) => setFilters({ ...filters, tactic: event.target.value })}
-          >
-            <option value="">All</option>
-            {TACTIC_OPTIONS.map((key) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>{FILTER_LABELS.platform}</span>
-          <select
+            onChange={(tactic) => setFilters({ ...filters, tactic })}
+            options={[...TACTIC_OPTIONS]}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.headline_tactic}
+            value={filters.headline_tactic}
+            onChange={(headline_tactic) =>
+              setFilters({ ...filters, headline_tactic })
+            }
+            options={choiceFilterKeys(HEADLINE_TACTIC_OPTIONS)}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.messaging_angle}
+            value={filters.messaging_angle}
+            onChange={(messaging_angle) =>
+              setFilters({ ...filters, messaging_angle })
+            }
+            options={choiceFilterKeys(MESSAGING_ANGLE_OPTIONS)}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.offer_type}
+            value={filters.offer_type}
+            onChange={(offer_type) => setFilters({ ...filters, offer_type })}
+            options={choiceFilterKeys(OFFER_TYPE_OPTIONS)}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.seasonality}
+            value={filters.seasonality}
+            onChange={(seasonality) => setFilters({ ...filters, seasonality })}
+            options={choiceFilterKeys(SEASONALITY_OPTIONS)}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.intended_audience}
+            value={filters.intended_audience}
+            onChange={(intended_audience) =>
+              setFilters({ ...filters, intended_audience })
+            }
+            options={choiceFilterKeys(INTENDED_AUDIENCE_OPTIONS)}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.platform}
             value={filters.platform}
-            onChange={(event) => setFilters({ ...filters, platform: event.target.value })}
-          >
-            <option value="">All</option>
-            {platforms.map((key) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>{FILTER_LABELS.media_type}</span>
-          <select
+            onChange={(platform) => setFilters({ ...filters, platform })}
+            options={platforms}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.media_type}
             value={filters.media_type}
-            onChange={(event) => setFilters({ ...filters, media_type: event.target.value })}
-          >
-            <option value="">All</option>
-            {mediaTypes.map((key) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>{FILTER_LABELS.sourceUrl}</span>
-          <select
+            onChange={(media_type) => setFilters({ ...filters, media_type })}
+            options={mediaTypes}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.sourceUrl}
             value={filters.sourceUrl}
-            onChange={(event) => setFilters({ ...filters, sourceUrl: event.target.value })}
-          >
-            <option value="">All</option>
-            {sources.map((key) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>{FILTER_LABELS.active}</span>
-          <select
-            value={filters.active}
-            onChange={(event) => setFilters({ ...filters, active: event.target.value })}
-          >
-            <option value="">All</option>
-            <option value="yes">Active</option>
-            <option value="no">Inactive</option>
-          </select>
-        </label>
+            onChange={(sourceUrl) => setFilters({ ...filters, sourceUrl })}
+            options={sources}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.still_active}
+            value={filters.still_active}
+            onChange={(still_active) =>
+              setFilters({ ...filters, still_active })
+            }
+            options={[
+              { value: "yes", label: "true" },
+              { value: "no", label: "false" },
+            ]}
+          />
+          <FilterSelect
+            label={FILTER_LABELS.winner}
+            value={filters.winner}
+            onChange={(winner) => setFilters({ ...filters, winner })}
+            options={[
+              { value: "yes", label: "true" },
+              { value: "no", label: "false" },
+            ]}
+          />
+          <label className="range">
+            <span>{FILTER_LABELS.creative_score}</span>
+            <span className="range-inputs">
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="min"
+                value={filters.scoreMin}
+                onChange={(event) =>
+                  setFilters({ ...filters, scoreMin: event.target.value })
+                }
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="max"
+                value={filters.scoreMax}
+                onChange={(event) =>
+                  setFilters({ ...filters, scoreMax: event.target.value })
+                }
+              />
+            </span>
+          </label>
+          <label className="range">
+            <span>{FILTER_LABELS.running_days}</span>
+            <span className="range-inputs">
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="min"
+                value={filters.daysMin}
+                onChange={(event) =>
+                  setFilters({ ...filters, daysMin: event.target.value })
+                }
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="max"
+                value={filters.daysMax}
+                onChange={(event) =>
+                  setFilters({ ...filters, daysMax: event.target.value })
+                }
+              />
+            </span>
+          </label>
         </div>
       </section>
 
+      {ads.length ? (
+        <details className="picker">
+          <summary>Meta columns</summary>
+          <div className="choices">
+            {availableExtra.map((key) => (
+              <label key={key}>
+                <input
+                  type="checkbox"
+                  checked={extraColumns.includes(key)}
+                  onChange={() => toggleColumn(key)}
+                />
+                {key}
+              </label>
+            ))}
+          </div>
+        </details>
+      ) : null}
+
       {allFailed ? (
-        <EmptyWall>All stacks failed. The wall is empty.</EmptyWall>
-      ) : emptyHoldings ? (
-        <EmptyWall>Scrape returned 0 ads. Nothing was invented.</EmptyWall>
+        <EmptyState>All URLs failed. No ads were invented.</EmptyState>
+      ) : emptyResults ? (
+        <EmptyState>Scrape returned 0 ads. Nothing was invented.</EmptyState>
       ) : !ads.length && !busy ? (
-        <EmptyWall>
+        <EmptyState>
           {valid.length
-            ? "Ready to pull. Run when the stacks look right."
+            ? "Ready to run."
             : draft.trim()
               ? "Those lines are not Ad Library URLs."
-              : "Empty wall. Paste Ad Library URLs to start a stack."}
-        </EmptyWall>
+              : "Paste Ad Library URLs to start."}
+        </EmptyState>
       ) : noFilterMatch ? (
-        <EmptyWall>No boxes match these filters.</EmptyWall>
+        <EmptyState>No rows match these filters.</EmptyState>
       ) : (
         <div className="table-wrap">
-          <table className="holdings">
+          <table className="results">
             <thead>
               <tr>
                 <th>Thumb</th>
@@ -464,19 +670,27 @@ export function App() {
                 <th>Headline</th>
                 <th>CTA</th>
                 <th>Platforms</th>
-                <th>Active</th>
-                <th>Started</th>
-                <th>Source</th>
                 <th>Hook</th>
                 <th>Tactics</th>
-                <th>Media</th>
+                <th>{FILTER_LABELS.headline_tactic}</th>
+                <th>{FILTER_LABELS.messaging_angle}</th>
+                <th>{FILTER_LABELS.offer_type}</th>
+                <th>{FILTER_LABELS.seasonality}</th>
+                <th>{FILTER_LABELS.intended_audience}</th>
+                <th>{FILTER_LABELS.still_active}</th>
+                <th>{FILTER_LABELS.running_days}</th>
+                <th title={WINNER_TOOLTIP}>{FILTER_LABELS.creative_score}</th>
+                <th title={WINNER_TOOLTIP}>{FILTER_LABELS.winner}</th>
+                {extraColumns.map((key) => (
+                  <th key={key}>{key}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((ad) => (
                 <tr
                   key={ad.id}
-                  className={ad.id === selectedId ? "lead" : undefined}
+                  className={ad.id === selectedId ? "selected" : undefined}
                   role="button"
                   tabIndex={0}
                   aria-pressed={ad.id === selectedId}
@@ -492,37 +706,45 @@ export function App() {
                     <Thumb url={ad.thumb_url} name={ad.page_name ?? ad.id} />
                   </td>
                   <td>
-                    <span className="code">{ad.id}</span>
-                    <strong>{ad.page_name ?? "—"}</strong>
+                    <span>{ad.id}</span>
+                    <strong>{displayValue(ad.page_name)}</strong>
                   </td>
                   <td>{snippet(ad.body)}</td>
-                  <td>{ad.headline ?? "—"}</td>
-                  <td>{ad.cta_text ?? "—"}</td>
-                  <td className="code">{formatList(ad.platforms)}</td>
-                  <td>{ad.is_active == null ? "—" : ad.is_active ? "yes" : "no"}</td>
-                  <td className="code">{formatDate(ad.started_at)}</td>
-                  <td className="src">{snippet(ad.sourceUrl, 42)}</td>
+                  <td>{displayValue(ad.headline)}</td>
+                  <td>{displayValue(ad.cta_text)}</td>
+                  <td>{formatList(ad.platforms)}</td>
                   <td>
                     {ad.classification?.hook?.choice ? (
-                      <span className={`tag ${chipTone(ad.classification.hook.choice)}`}>
+                      <span className="tag">
                         {ad.classification.hook.choice}
                       </span>
                     ) : (
-                      <span className="ghost">—</span>
+                      <Ghost>{NO_VALUE}</Ghost>
                     )}
                   </td>
                   <td>
-                    {ad.classification?.tactics.length ? (
-                      ad.classification.tactics.map((tactic) => (
-                        <span key={tactic} className={`tag ${chipTone(tactic)}`}>
-                          {tactic}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="ghost">—</span>
-                    )}
+                    <Tags values={ad.classification?.tactics ?? []} />
                   </td>
-                  <td>{ad.media_type ?? <span className="ghost">—</span>}</td>
+                  {CHOICE_COLUMNS.map((key) => (
+                    <td key={key}>
+                      {ad.classification?.[key]?.choice ? (
+                        <span className="tag">
+                          {ad.classification[key]?.choice}
+                        </span>
+                      ) : (
+                        <Ghost>{NO_VALUE}</Ghost>
+                      )}
+                    </td>
+                  ))}
+                  <td>{displayValue(ad.still_active)}</td>
+                  <td>{displayValue(ad.running_days)}</td>
+                  <td title={WINNER_TOOLTIP}>
+                    {displayValue(ad.creative_score)}
+                  </td>
+                  <td title={WINNER_TOOLTIP}>{displayValue(ad.winner)}</td>
+                  {extraColumns.map((key) => (
+                    <td key={key}>{displayValue(ad.meta?.[key])}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -531,73 +753,186 @@ export function App() {
       )}
 
       {selected ? (
-        <aside className="drawer" role="dialog" aria-label="Open box">
-          <div className="lid" aria-hidden="true" />
-          <div className="tissue">
-            <button type="button" className="close" onClick={() => setSelectedId(null)}>
-              Close
-            </button>
-            <p className="code">BOX {selected.id}</p>
-            <h2>{selected.page_name ?? "Untitled page"}</h2>
-            <Thumb url={selected.thumb_url} name={selected.page_name ?? selected.id} large />
-            {selected.video_urls[0] ? (
-              <p className="note">Video URL on file. Poster shown; CDN may expire.</p>
-            ) : null}
-            <p className="body">{selected.body ?? "No body text in the snapshot."}</p>
-            <dl>
-              <div>
-                <dt>Headline</dt>
-                <dd>{selected.headline ?? "—"}</dd>
-              </div>
-              <div>
-                <dt>CTA</dt>
-                <dd>
-                  {selected.cta_text ?? "—"} {selected.cta_type ? `(${selected.cta_type})` : ""}
-                </dd>
-              </div>
-              <div>
-                <dt>Started</dt>
-                <dd>{formatDate(selected.started_at)}</dd>
-              </div>
-              <div>
-                <dt>Stopped</dt>
-                <dd>{formatDate(selected.stopped_at)}</dd>
-              </div>
-            </dl>
-            <p>
-              {selected.link_url ? (
-                <a href={selected.link_url} target="_blank" rel="noreferrer">
-                  Outbound link
-                </a>
-              ) : null}
-              {" · "}
-              <a href={selected.ad_library_url} target="_blank" rel="noreferrer">
-                Ad Library
-              </a>
-            </p>
-            <pre className="raw">{JSON.stringify(selected.raw, null, 2)}</pre>
-          </div>
-        </aside>
+        <Drawer
+          ad={selected}
+          scoreMin={scoreMin}
+          daysMin={daysMin}
+          onClose={() => setSelectedId(null)}
+        />
       ) : null}
     </div>
   );
 }
 
-function EmptyWall({ children }: { children: ReactNode }) {
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<string | { value: string; label: string }>;
+}) {
   return (
-    <div className="table-wrap empty-wall">
-      <div className="end-slots" aria-hidden="true">
-        {Array.from({ length: 7 }, (_, index) => (
-          <div className="end-slot" key={index}>
-            <span className="well" />
-            <span className="rib" />
-            <span className="runout" />
-          </div>
-        ))}
-      </div>
-      <p className="empty-copy">{children}</p>
+    <label>
+      <span>{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="">All</option>
+        {options.map((option) => {
+          const key = typeof option === "string" ? option : option.value;
+          const text = typeof option === "string" ? option : option.label;
+          return (
+            <option key={key} value={key}>
+              {text}
+            </option>
+          );
+        })}
+      </select>
+    </label>
+  );
+}
+
+function Drawer({
+  ad,
+  scoreMin,
+  daysMin,
+  onClose,
+}: {
+  ad: ClassifiedAd;
+  scoreMin: number;
+  daysMin: number;
+  onClose: () => void;
+}) {
+  const extraKeys = unsectionedMetaKeys(Object.keys(ad.meta ?? {}));
+  const classification = ad.classification;
+  return (
+    <aside className="drawer" role="dialog" aria-label="Ad detail">
+      <button type="button" className="close" onClick={onClose}>
+        Close
+      </button>
+      <p>{ad.id}</p>
+      <h2>{displayValue(ad.page_name)}</h2>
+      <Thumb url={ad.thumb_url} name={ad.page_name ?? ad.id} large />
+      {ad.video_urls[0] ? (
+        <p className="note">
+          Video URL on file. Poster shown; CDN may expire.
+        </p>
+      ) : null}
+      <p className="body">{displayValue(ad.body)}</p>
+      <p>
+        {ad.link_url ? (
+          <a href={ad.link_url} target="_blank" rel="noreferrer">
+            Outbound link
+          </a>
+        ) : (
+          <span>{NO_VALUE}</span>
+        )}
+        {" · "}
+        <a href={ad.ad_library_url} target="_blank" rel="noreferrer">
+          Ad Library
+        </a>
+      </p>
+
+      <section>
+        <h3>Classification</h3>
+        <dl>
+          <Field label="Hook" value={choiceLabel(classification?.hook)} />
+          <Field label="Tactics" value={displayValue(classification?.tactics)} />
+          <Field
+            label={FILTER_LABELS.headline_tactic}
+            value={choiceLabel(classification?.headline_tactic)}
+          />
+          <Field
+            label={FILTER_LABELS.messaging_angle}
+            value={choiceLabel(classification?.messaging_angle)}
+          />
+          <Field
+            label={FILTER_LABELS.offer_type}
+            value={choiceLabel(classification?.offer_type)}
+          />
+          <Field
+            label={FILTER_LABELS.seasonality}
+            value={choiceLabel(classification?.seasonality)}
+          />
+          <Field
+            label={FILTER_LABELS.intended_audience}
+            value={choiceLabel(classification?.intended_audience)}
+          />
+          <Field
+            label="Asset type"
+            value={choiceLabel(classification?.asset_type)}
+          />
+          <Field
+            label="Visual format"
+            value={choiceLabel(classification?.visual_format)}
+          />
+        </dl>
+      </section>
+
+      <section>
+        <h3>Winner signals</h3>
+        <p className="note">
+          Heuristic only. Winner when creative_score ≥ {scoreMin} and
+          running_days ≥ {daysMin}. Ad Library usually lacks spend / impressions
+          / ROAS.
+        </p>
+        <dl>
+          <Field label={FILTER_LABELS.still_active} value={displayValue(ad.still_active)} />
+          <Field label={FILTER_LABELS.running_days} value={displayValue(ad.running_days)} />
+          <Field
+            label={FILTER_LABELS.creative_score}
+            value={displayValue(ad.creative_score)}
+          />
+          <Field label={FILTER_LABELS.winner} value={displayValue(ad.winner)} />
+        </dl>
+      </section>
+
+      {META_SECTIONS.map((section) => (
+        <section key={section.title}>
+          <h3>{section.title}</h3>
+          <dl>
+            {section.keys.map((key) => (
+              <Field key={key} label={key} value={displayValue(ad.meta?.[key])} />
+            ))}
+          </dl>
+        </section>
+      ))}
+
+      {extraKeys.length ? (
+        <section>
+          <h3>Other Meta fields</h3>
+          <dl>
+            {extraKeys.map((key) => (
+              <Field key={key} label={key} value={displayValue(ad.meta?.[key])} />
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
+      <section>
+        <h3>Raw</h3>
+        <pre className="raw">{JSON.stringify(ad.raw, null, 2)}</pre>
+      </section>
+    </aside>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
+}
+
+function EmptyState({ children }: { children: ReactNode }) {
+  return <p className="empty">{children}</p>;
 }
 
 function Thumb({
@@ -610,7 +945,12 @@ function Thumb({
 }) {
   const [failed, setFailed] = useState(!url);
   if (failed || !url) {
-    return <span className={`thumb placeholder ${large ? "large" : ""}`} aria-hidden="true" />;
+    return (
+      <span
+        className={`thumb placeholder ${large ? "large" : ""}`}
+        aria-hidden="true"
+      />
+    );
   }
   return (
     <img

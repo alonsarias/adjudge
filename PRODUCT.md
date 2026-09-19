@@ -39,7 +39,7 @@ Used on the strategist’s machine. They paste up to five `facebook.com/ads/libr
 
 ## Brand Commitments
 
-Name: **adjudge**. Voice is tool-like and scannable — an analyst workbench, not a marketing page. Locked visual world: **Sneaker Archive Wall** (seed `2ad3d5a9`, bolder reroll, catalog `textiles-weave-drape-fashion-sneaker-box-stacks`), code-first. Do not revive Accession Register (ledger stamps, manila, cool-gray paper), Edit Decision List phosphor, or club-sleeve scrawl.
+Name: **adjudge**. Voice is tool-like and scannable — an analyst workbench, not a marketing page. No locked visual world.
 
 ## Evidence on Hand
 
