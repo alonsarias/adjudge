@@ -1,0 +1,161 @@
+{
+  "title": "Choose a new visual world",
+  "question": "Bolder hand — foreign forms only. First-dealt Flash-Scrawl Club Sleeve leads: ads live on a defaced sleeve, not a dashboard. Darkroom and Sneaker beat it on both axes; Specimen holds as a tool. Leather studio and alphabet storm sit demoted. Last hand (EDL, contact sheet, centre-rail, racing, drum, ASCII, Miura, tensegrity) is out.",
+  "options": [
+    {
+      "id": "posters-covers-sleeves-flash-scrawl-club-sleeve",
+      "label": "Flash-Scrawl Club Sleeve",
+      "kicker": "THE ROLL",
+      "lineage": "a french house label sleeve: direct-flash party photo, fat marker logo, fluorescent sticker on one corner",
+      "thesis": "Each scrape is a defaced sleeve: the photo is the lot, the marker is the action, the pressed-type foot is the holdings.",
+      "palette": ["#0a0a0a", "#ff3d7f", "#f6f4ef", "#2a2a2a"],
+      "materials": ["blown flash", "marker scrawl", "white sticker stock", "pressed-type credits"],
+      "viewport": "A crushed-flash sleeve: paste URLs on the photo, Run as one pink stroke, lots as corner stickers; the table is the release strip at the foot; click redraws the selected take heavier.",
+      "risk": "Party chrome can bury the copy if the marker outruns the credits.",
+      "raised": [
+        { "from": "leather-studio", "raise": "The selected take sits proud of the sleeve; scrape progress fills as one stroke, not a status sentence." },
+        { "from": "alphabet-storm", "raise": "Run is one mark laid at speed; body copy stays readable while the sleeve redraws." }
+      ],
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "flash / paste", "x": 0, "y": 0, "w": 8, "h": 5, "accent": true },
+          { "label": "lot stickers", "x": 8, "y": 0, "w": 4, "h": 5 },
+          { "label": "release strip", "x": 0, "y": 5, "w": 12, "h": 5 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/bolder-sleeve.webp",
+      "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-flash-scrawl-club-sleeve-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/posters-covers-sleeves-flash-scrawl-club-sleeve.webp"
+    },
+    {
+      "id": "signals-instruments-darkroom-safelight-bay",
+      "label": "Darkroom Safelight Bay",
+      "verdict": "wins",
+      "lineage": "an amber darkroom: enlarger, timed baths, drying line, the print emerging in the tray",
+      "thesis": "Paste, scrape, and classify are stations under safelight; ads develop in the tray instead of arriving as rows.",
+      "palette": ["#c9a000", "#12110e", "#e8e4d8", "#6a6860"],
+      "materials": ["amber wash", "enamel tray", "timer digits", "test strips"],
+      "viewport": "Amber bay: URL lots as enlarger notes, Run as the timer, holdings emerging in the tray; the drawer is a lifted wet print.",
+      "case": "Beats the sleeve on both axes — strategists already watch creative appear, and the stations are the product.",
+      "risk": "Contact-sheet déjà vu if the tray becomes a grid of frames.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-darkroom-safelight-bay-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/signals-instruments-darkroom-safelight-bay.webp",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "timer / paste", "x": 0, "y": 0, "w": 12, "h": 3, "accent": true },
+          { "label": "develop tray", "x": 0, "y": 3, "w": 12, "h": 5 },
+          { "label": "stations", "x": 0, "y": 8, "w": 12, "h": 2 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/bolder-darkroom.webp"
+    },
+    {
+      "id": "textiles-weave-drape-fashion-sneaker-box-stacks",
+      "label": "Sneaker Archive Wall",
+      "verdict": "wins",
+      "lineage": "stacked cardboard boxes, silhouette end art, colorway names as verse, tissue in the lid",
+      "thesis": "Each ad is a box on the wall: end label for scan, half-pull to select, lid for the drawer.",
+      "palette": ["#c45a14", "#161616", "#f3efe6", "#8a8a8a"],
+      "materials": ["burnt-orange board", "one-line silhouette", "tissue white", "colorway chips"],
+      "viewport": "A box wall: URL lots as stacks, holdings as end labels (page / hook / size-run); click slides a box out; the drawer is the open lid.",
+      "case": "Beats the sleeve on both axes — DTC archives are home, and labeled ends scan fifty ads.",
+      "risk": "The wall wants cards; the spec wants a table. End labels must stay the log.",
+      "hero": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-sneaker-box-stacks-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-sneaker-box-stacks.webp",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "stack face", "x": 0, "y": 0, "w": 12, "h": 10 },
+          { "label": "pulled box", "x": 4, "y": 3, "w": 6, "h": 5, "accent": true }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/bolder-sneaker.webp"
+    },
+    {
+      "id": "variable-font-specimen",
+      "label": "Variable Font Specimen",
+      "verdict": "competitive",
+      "lineage": "an interactive type specimen: one giant letter, axis sliders, a live glyph grid",
+      "thesis": "Filters are axes; the table is the glyph grid; the selected hook is the giant letter.",
+      "palette": ["#f6f4ef", "#111111", "#2a5cff", "#8a8a8a"],
+      "materials": ["near-white paper", "ink black", "foundry accent", "baseline grid"],
+      "viewport": "Paper field: paste as the measure, filter sliders as axes, holdings as the glyph grid; the selected hook floods the display size.",
+      "case": "Holds product clarity — sliders and a cell grid are the job — but a foundry specimen is not the strategist’s desk.",
+      "risk": "The giant letter can outrank the fifty rows.",
+      "hero": "https://impeccable.style/worlds/cards/variable-font-specimen-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/variable-font-specimen.webp",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "display hook", "x": 0, "y": 0, "w": 7, "h": 4 },
+          { "label": "axis sliders", "x": 7, "y": 0, "w": 5, "h": 4, "accent": true },
+          { "label": "glyph table", "x": 0, "y": 4, "w": 12, "h": 6 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/bolder-specimen.webp"
+    },
+    {
+      "id": "digital-design-canon-skeuomorph-leather-studio",
+      "label": "Skeuomorph Leather Studio",
+      "verdict": "declined",
+      "lineage": "stitched-leather reading shelf, tooled headers, linen, torn paper, walnut",
+      "thesis": "Lots as leather objects on a shelf; ads as torn pages; the drawer is a page curl.",
+      "palette": ["#8a5a32", "#c4b8a4", "#3d2a1c", "#f4efe6"],
+      "materials": ["saddle leather", "cream stitch", "walnut shelf", "torn paper"],
+      "viewport": "A lamplit shelf: URL lots as tooled headers; holdings as paper on wood; click curls a page.",
+      "case": "Loses both axes: strategists do not live in iOS-6 leather, and a shelf hides a 50-row scan.",
+      "kept": "The selected take sits proud; progress fills as one stroke.",
+      "hero": "https://impeccable.style/worlds/cards/digital-design-canon-skeuomorph-leather-studio-hero.webp",
+      "risk": "Costume library over the log.",
+      "comp": ".impeccable/mocks/decision/bolder-leather.webp"
+    },
+    {
+      "id": "dream-surreal-impossible-worlds-alphabet-storm",
+      "label": "Alphabet Storm",
+      "verdict": "declined",
+      "lineage": "letters condense into words, break into weather, and carve the landscape",
+      "thesis": "Search and filters type weather; ads gather as letter fronts on white ground.",
+      "palette": ["#f7f7f5", "#111111", "#c5c8cc", "#8a8d91"],
+      "materials": ["paper white", "storm-letter black", "silver flash", "rain gray"],
+      "viewport": "An open field: paste as a forming word; holdings as weather fronts; the selected id is the only solid glyph.",
+      "case": "Loses both axes: surreal weather is not this desk, and body copy cannot be rain.",
+      "kept": "Run is one mark at speed; row text stays readable through the redraw.",
+      "hero": "https://impeccable.style/worlds/cards/dream-surreal-impossible-worlds-alphabet-storm-hero.webp",
+      "risk": "The weather would replace the table.",
+      "comp": ".impeccable/mocks/decision/bolder-storm.webp"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": true
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "Play it straight",
+    "thesis": "The category standard aimed at Foreplay, Motion, and Meta’s Ad Library: left query, center table, right drawer, at full craft.",
+    "palette": ["#ffffff", "#111827", "#2563eb"],
+    "materials": ["app shell", "data table", "filter chips"],
+    "viewport": "Top bar, URL input, filter row, results table, slide-over — what those products already trained.",
+    "risk": "Indistinguishable from Foreplay / Motion by design.",
+    "wireframe": {
+      "cols": 12,
+      "rows": 10,
+      "regions": [
+        { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true },
+        { "label": "input", "x": 0, "y": 1, "w": 12, "h": 2 },
+        { "label": "table", "x": 0, "y": 3, "w": 12, "h": 7 }
+      ]
+    },
+    "comp": ".impeccable/mocks/decision/canon.webp"
+  },
+  "steer": true
+}

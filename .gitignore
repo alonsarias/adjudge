@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+test-results
+playwright-report
+blob-report
+playwright/.cache
+*.trace.zip
+.DS_Store
+.impeccable/config.local.json
+.impeccable/questions
+.impeccable/cache

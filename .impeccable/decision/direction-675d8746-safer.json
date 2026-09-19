@@ -1,0 +1,91 @@
+{
+  "title": "Choose the visual world",
+  "question": "Safer hand: the roll is suspended. Pick from the remaining familiar grounded worlds, or play it straight against Foreplay, Motion, and the native Ad Library.",
+  "options": [
+    {
+      "id": "swipe-file",
+      "label": "Swipe-File Binder",
+      "lineage": "tabbed competitor swipe files, pulled pages, and grease-pencil selects on a strategist’s desk",
+      "thesis": "Each ad is a pulled page in a working swipe file, not a dashboard card.",
+      "palette": ["#f2ebe0", "#2a241c", "#7a5130", "#b42318"],
+      "materials": ["tabbed binder", "pulled page", "grease pencil", "tab index"],
+      "viewport": "Binder tabs as URL lots; the table as pulled pages; a page lifted into a right-hand inspect.",
+      "risk": "Swipe-file nostalgia can costume a table if the tabs are decoration.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "tabs / lots", "x": 0, "y": 0, "w": 12, "h": 2, "accent": true },
+          { "label": "pulled pages", "x": 0, "y": 2, "w": 8, "h": 8 },
+          { "label": "inspect page", "x": 8, "y": 2, "w": 4, "h": 8 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/swipe-file.webp"
+    },
+    {
+      "id": "watch-desk",
+      "label": "Watch Desk",
+      "lineage": "collection desks, source logs, and take folders from OSINT and media-monitoring rooms",
+      "thesis": "The run is a collection job: sources first, take as it lands, judgment after.",
+      "palette": ["#d8dde2", "#1b1f24", "#4d5a66", "#0b6e4f"],
+      "materials": ["source log", "job stamp", "take folder", "status strip"],
+      "viewport": "Source URLs and job status on top; take table fills immediately; inspect is a pulled folder.",
+      "risk": "Watch-desk chrome can feel ops-heavy if it hides the ad body.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "job / sources", "x": 0, "y": 0, "w": 12, "h": 3, "accent": true },
+          { "label": "take table", "x": 0, "y": 3, "w": 12, "h": 7 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/watch-desk.webp"
+    },
+    {
+      "id": "as-run",
+      "label": "As-Run Rundown",
+      "lineage": "broadcast traffic rundowns: timed spots, as-run logs, and show clocks",
+      "thesis": "URL i/5 is a rundown clock; each ad is a spot that has already run.",
+      "palette": ["#111318", "#e8e6e1", "#d9a441", "#c0392b"],
+      "materials": ["rundown rows", "show clock", "as-run mark", "slate"],
+      "viewport": "A rundown header with the clock; spots as dense rows; the selected spot opens the script.",
+      "risk": "Broadcast dark-slate can bury copy if the clock outranks the log.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "show clock", "x": 0, "y": 0, "w": 12, "h": 2, "accent": true },
+          { "label": "rundown", "x": 0, "y": 2, "w": 12, "h": 8 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/as-run.webp"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": true
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "Play it straight",
+    "thesis": "The category standard, aimed at Foreplay, Motion, and Meta’s own Ad Library: left query, center table, right drawer, at full craft.",
+    "palette": ["#ffffff", "#111827", "#2563eb"],
+    "materials": ["app shell", "data table", "filter chips"],
+    "viewport": "Top bar, URL input, filter row, results table, slide-over detail — what those products already trained the user to expect.",
+    "risk": "Indistinguishable from Foreplay / Motion by design.",
+    "wireframe": {
+      "cols": 12,
+      "rows": 10,
+      "regions": [
+        { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true },
+        { "label": "input", "x": 0, "y": 1, "w": 12, "h": 2 },
+        { "label": "table", "x": 0, "y": 3, "w": 12, "h": 7 }
+      ]
+    },
+    "comp": ".impeccable/mocks/decision/canon.webp"
+  },
+  "steer": true
+}
