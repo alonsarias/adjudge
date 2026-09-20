@@ -258,6 +258,36 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    const nodes = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-proof]"),
+    );
+    if (!nodes.length) return;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduce) {
+      for (const node of nodes) node.classList.add("is-in");
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-in");
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -8% 0px" },
+    );
+    for (const node of nodes) {
+      if (node.classList.contains("is-in")) continue;
+      node.classList.add("is-pending");
+      observer.observe(node);
+    }
+    return () => observer.disconnect();
+  }, [ads.length, results.length, phase]);
+
   const parsed = useMemo(() => parseLines(draft), [draft]);
   const invalid = parsed.filter((url) => !isAdLibraryUrl(url));
   const valid = parsed.filter((url) => isAdLibraryUrl(url)).slice(0, 5);
@@ -577,7 +607,7 @@ export function App() {
       </ol>
 
       {results.length ? (
-        <ol className="url-results">
+        <ol className="url-results proof" data-proof>
           {results.map((result, index) => (
             <li key={result.url} className={result.ok ? "ok" : "fail"}>
               <span>URL {String(index + 1).padStart(2, "0")}</span>
@@ -771,7 +801,7 @@ export function App() {
       ) : noFilterMatch ? (
         <EmptyState>No rows match these filters.</EmptyState>
       ) : (
-        <div className="table-wrap">
+        <div className="table-wrap proof" data-proof>
           <table className="results">
             <thead>
               <tr>
@@ -1199,7 +1229,11 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="empty">{children}</p>;
+  return (
+    <p className="empty proof" data-proof>
+      {children}
+    </p>
+  );
 }
 
 function Thumb({

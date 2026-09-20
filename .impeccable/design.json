@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-20T19:03:56Z",
+  "title": "Design System: adjudge",
+  "extensions": {
+    "colorMeta": {
+      "s0": {
+        "role": "neutral",
+        "displayName": "Gallery White",
+        "canonical": "#fafafa",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "s1": {
+        "role": "neutral",
+        "displayName": "Cool Mist",
+        "canonical": "#f2f2f2",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "s2": {
+        "role": "neutral",
+        "displayName": "Hairline Chrome",
+        "canonical": "#e6e6e6",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "s3": {
+        "role": "neutral",
+        "displayName": "Cloud Silver",
+        "canonical": "#cfcfcf",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "s4": {
+        "role": "neutral",
+        "displayName": "Pewter",
+        "canonical": "#a6a6a6",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "s5": {
+        "role": "neutral",
+        "displayName": "Graphite Mute",
+        "canonical": "#6b6b6b",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "s6": {
+        "role": "neutral",
+        "displayName": "Near-Black Ink",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Chartreuse Ring",
+        "canonical": "oklch(76.84% 0.1572 120.7)",
+        "tonalRamp": [
+          "#0d1500",
+          "#273500",
+          "#435700",
+          "#637a00",
+          "#869f17",
+          "#a6c23f",
+          "#c7dc89",
+          "#e3f5b3"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Bright Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#111111",
+          "#6b6b6b",
+          "#a6a6a6",
+          "#cfcfcf",
+          "#e6e6e6",
+          "#f2f2f2",
+          "#fafafa",
+          "#ffffff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title only. 1.5rem Satoshi bold, −0.03em. Largest size the workbench sets."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Drawer page name. Bold and −0.03em; size left to the user-agent heading."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Drawer section headings at 0.85rem / 500."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Page default 15px / 1.45 / 400. Controls inherit size at 500. Lede wraps at 62ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field captions, filter captions, and table headers at 0.8rem / 500 / mute."
+      }
+    },
+    "shadows": [
+      {
+        "name": "thumb-loft",
+        "value": "0 10px 18px -14px rgb(17 17 17 / 0.4)",
+        "purpose": "Compressed loft under the 52px product thumb."
+      },
+      {
+        "name": "drawer-edge",
+        "value": "-18px 0 40px -28px rgb(17 17 17 / 0.35)",
+        "purpose": "Soft falloff on the fixed detail drawer."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-proof",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Proof rise easing (`--ease`). 240ms on transform, opacity, and blur."
+      },
+      {
+        "name": "proof-pending",
+        "value": "opacity 0.88; translate3d(0, 14px, 0); blur(4px)",
+        "purpose": "Intersection-pending state on [data-proof] when motion is allowed."
+      },
+      {
+        "name": "button-active",
+        "value": "translateY(0.5px)",
+        "purpose": "Press offset on enabled buttons. Stripped under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "900px",
+        "purpose": "Intake, slots, filter dials, and URL-result rows collapse to one column; header stacks; drawer goes full width."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Run: near-black pill with a 1.5px chartreuse ring.",
+      "html": "<button class=\"ds-run\" type=\"button\">Run</button>",
+      "css": ".ds-run { padding: 8px 14px; cursor: pointer; color: var(--s0); background: var(--s6); border: 1.5px solid var(--accent); border-radius: 999px; font-weight: 500; } .ds-run:hover:not(:disabled) { background: #000; } .ds-run:active:not(:disabled) { transform: translateY(0.5px); } .ds-run:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-run:disabled { color: var(--s0); background: var(--s5); border-color: var(--s5); cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Cancel, CSV, and Close: paper pill, hairline, full-opacity disabled.",
+      "html": "<button class=\"ds-ghost\" type=\"button\">Cancel</button>",
+      "css": ".ds-ghost { padding: 8px 14px; cursor: pointer; color: var(--s6); background: var(--paper); border: var(--hair); border-radius: 999px; font-weight: 500; } .ds-ghost:hover:not(:disabled) { background: var(--s1); } .ds-ghost:active:not(:disabled) { transform: translateY(0.5px); } .ds-ghost:focus-visible { outline: 2px solid var(--s6); outline-offset: 2px; } .ds-ghost:disabled { opacity: 1; color: var(--s5); border-color: var(--s3); background: var(--paper); cursor: not-allowed; }"
+    },
+    {
+      "name": "URL Textarea",
+      "kind": "input",
+      "refersTo": "textarea",
+      "description": "Intake field: paper, hairline, 14px radius, five-line minimum.",
+      "html": "<label class=\"ds-field\"><span>Ad Library URLs · one per line · 5 max</span><textarea rows=\"5\" spellcheck=\"false\" placeholder=\"https://www.facebook.com/ads/library/?view_all_page_id=…\"></textarea></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 4px; } .ds-field > span { font-size: 0.8rem; font-weight: 500; color: var(--s5); } .ds-field textarea { width: 100%; min-height: 124px; padding: 8px; color: var(--s6); background: var(--paper); border: var(--hair); border-radius: 14px; resize: vertical; font: inherit; } .ds-field textarea::placeholder { color: var(--s5); } .ds-field textarea:focus-visible { outline: 2px solid var(--s6); outline-offset: 2px; }"
+    },
+    {
+      "name": "Pill Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Search and filter fields: paper pill with hairline.",
+      "html": "<label class=\"ds-input\"><span>Search</span><input type=\"text\" /></label>",
+      "css": ".ds-input { display: flex; flex-direction: column; gap: 4px; } .ds-input > span { font-size: 0.8rem; font-weight: 500; color: var(--s5); } .ds-input input { width: 100%; padding: 8px; color: var(--s6); background: var(--paper); border: var(--hair); border-radius: 999px; font: inherit; } .ds-input input::placeholder { color: var(--s5); } .ds-input input:focus-visible { outline: 2px solid var(--s6); outline-offset: 2px; }"
+    },
+    {
+      "name": "Classification Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Mist pill for hook, tactics, and classified choice cells.",
+      "html": "<span class=\"ds-tag\">Problem / Solution</span>",
+      "css": ".ds-tag { display: inline-block; margin: 0 4px 4px 0; padding: 2px 8px; background: var(--s1); border: var(--hair); border-radius: 999px; font-size: 0.78rem; font-weight: 500; color: var(--s6); }"
+    },
+    {
+      "name": "Empty Proof",
+      "kind": "card",
+      "refersTo": "empty",
+      "description": "Vacant table slot: paper radial, hairline, 16px radius.",
+      "html": "<p class=\"ds-empty\">Paste Ad Library URLs to start.</p>",
+      "css": ".ds-empty { margin: 24px 0; padding: 16px 18px; max-width: 62ch; color: var(--s6); background: radial-gradient(80% 120% at 50% 0%, #ffffff 0%, var(--s0) 70%); border: var(--hair); border-radius: 16px; }"
+    },
+    {
+      "name": "URL Slot",
+      "kind": "custom",
+      "refersTo": "slot",
+      "description": "One of five URL berths. Success is a 7px accent dot; fail is an ink border.",
+      "html": "<ol class=\"ds-slots\"><li>URL 01</li><li class=\"ok\">URL 02</li><li class=\"fail\">URL 03</li></ol>",
+      "css": ".ds-slots { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .ds-slots li { position: relative; padding: 8px; background: var(--paper); border: var(--hair); border-radius: 12px; } .ds-slots li.ok::after { content: \"\"; position: absolute; top: 9px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); } .ds-slots li.fail { border-color: var(--s6); }"
+    },
+    {
+      "name": "Results Table",
+      "kind": "card",
+      "refersTo": "table-wrap",
+      "description": "Proof wrap plus classified row. Same paper language as the empty state.",
+      "html": "<div class=\"ds-table-wrap\"><table class=\"ds-results\"><thead><tr><th><button type=\"button\">Page</button></th><th><button type=\"button\">Hook</button></th></tr></thead><tbody><tr><td><strong>Page name</strong></td><td><span class=\"ds-tag\">Urgency</span></td></tr></tbody></table></div>",
+      "css": ".ds-table-wrap { overflow: auto; background: radial-gradient(80% 120% at 50% 0%, #ffffff 0%, var(--s0) 70%); border: var(--hair); border-radius: 16px; } .ds-results { width: 100%; border-collapse: collapse; } .ds-results th, .ds-results td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--s2); font-variant-numeric: tabular-nums; } .ds-results th { padding: 0; font-size: 0.8rem; font-weight: 500; color: var(--s5); background: rgb(250 250 250 / 0.92); } .ds-results th button { appearance: none; width: 100%; margin: 0; padding: 8px; border: 0; border-radius: 0; background: none; color: inherit; font: inherit; font-weight: 500; text-align: left; cursor: pointer; } .ds-results th button:hover { background: var(--s1); } .ds-results th button:focus-visible { outline: 2px solid var(--s6); outline-offset: -2px; } .ds-results tbody tr { cursor: pointer; } .ds-results tbody tr:hover { background: var(--s1); } .ds-tag { display: inline-block; padding: 2px 8px; background: var(--s1); border: var(--hair); border-radius: 999px; font-size: 0.78rem; font-weight: 500; }"
+    },
+    {
+      "name": "Product Thumb",
+      "kind": "custom",
+      "refersTo": "thumb",
+      "description": "52px creative on a radial ground with compressed loft. Placeholder keeps the row.",
+      "html": "<span class=\"ds-thumb\" aria-hidden=\"true\"></span>",
+      "css": ".ds-thumb { width: 52px; height: 52px; display: block; border: var(--hair); border-radius: 10px; background: radial-gradient(circle at 42% 32%, #ffffff 0%, var(--s1) 68%); box-shadow: 0 10px 18px -14px rgb(17 17 17 / 0.4); }"
+    },
+    {
+      "name": "Detail Drawer",
+      "kind": "custom",
+      "refersTo": "drawer",
+      "description": "Fixed right panel: gallery ground, left hairline, edge shadow.",
+      "html": "<aside class=\"ds-drawer\" role=\"dialog\" aria-label=\"Ad detail\"><button type=\"button\" class=\"ds-ghost\">Close</button><p>123456789</p><h2>Page name</h2><p class=\"ds-note\">Heuristic only. Winner when creative score and running days clear the local floor.</p></aside>",
+      "css": ".ds-drawer { width: min(520px, 100%); padding: 20px; background: var(--s0); border-left: var(--hair); box-shadow: -18px 0 40px -28px rgb(17 17 17 / 0.35); color: var(--s6); } .ds-drawer h2 { margin: 8px 0 14px; font-weight: 700; letter-spacing: -0.03em; } .ds-drawer .ds-note { margin: 6px 0 0; color: var(--s5); } .ds-ghost { float: right; padding: 8px 14px; cursor: pointer; color: var(--s6); background: var(--paper); border: var(--hair); border-radius: 999px; font-weight: 500; } .ds-ghost:hover { background: var(--s1); } .ds-ghost:focus-visible { outline: 2px solid var(--s6); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Workbench Stays Put",
+    "overview": "adjudge wears Monochrome Product Marketing as a tool, not as a campaign. The seven-step near-white to near-black scale, Satoshi, hairline chrome, ghost pills, and a single chartreuse mark are the catalog world's materials; the page itself stays an analyst workbench. Title, intake, slots, filters, and the proof (empty or table) remain where they already sit. Nothing is restaged into a hero, a sidebar shell, or a marketing narrative.\n\nThe atmosphere is paper: a gallery ground, a fixed micro-noise film, and quiet radial highlights. Depth is tonal. Controls are white pills with a hairline until Run, which is near-black with the only chromatic stroke. Proofs — the empty state and the results table — share one paper language so a successful scrape does not change the furniture.\n\nThis system is the operate expression of `digital-design-canon-monochrome-product-marketing`. It keeps the world's scale, type, chrome, and ring, and leaves the catalog card's poster composition (oversized display type, device mock, campaign headline) on the reference sheet.",
+    "keyCharacteristics": [
+      "Seven-step neutral scale (`--s0`–`--s6`) plus bright paper and one chartreuse",
+      "Self-hosted Satoshi at 400 / 500 / 700 on a Helvetica Neue fallback stack",
+      "Hairline chrome (`1px solid --s2`); pills for controls; 16px radii for proofs",
+      "Primary action is ink-filled with a 1.5px accent ring",
+      "Product thumbs sit on radial grounds; proofs use the same paper + hairline + radial recipe",
+      "Intersection-driven soft rise on `[data-proof]`; reduced motion turns it off"
+    ],
+    "rules": [
+      {
+        "name": "The Chartreuse-as-Proof Rule",
+        "body": "Accent marks the thing that runs and the slot that succeeded. If a new control needs color, it does not get a second hue — it gets ink, hairline, or this same chartreuse in a 7px dot or a 1.5px ring.",
+        "section": "colors"
+      },
+      {
+        "name": "The Seven-Step Rule",
+        "body": "Neutrals come from `--s0`–`--s6` plus `--paper`. Do not insert a warm or cool tint between steps. Run's hover fill `#000000` is a one-off darker than ink; it is not a new scale step.",
+        "section": "colors"
+      },
+      {
+        "name": "The Satoshi Three-Weight Rule",
+        "body": "Regular for body, medium for controls and labels, bold for the two titles. No italics, no fourth weight, no second UI family. Mono is a drawer inspection face, not a brand face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline-Not-Shadow Rule",
+        "body": "Chrome is a 1px `--s2` stroke. Do not add ambient card shadows, hover lifts, or a third shadow role. Thumbs and the drawer already have the only loft the world uses.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep proofs (empty and table) on the same paper + hairline + 16px + top-lit radial recipe, in the same slot.",
+      "Do paint Run as ink-on-gallery with a 1.5px chartreuse ring; paint every other action as a paper ghost pill.",
+      "Do signal URL success with a 7px accent dot and URL failure with an ink border — not a second chroma.",
+      "Do sit product thumbs on radial grounds; keep a broken thumb as a placeholder so the row never disappears.",
+      "Do use Satoshi 400 / 500 / 700 and the seven-step scale as declared on `:root`.",
+      "Do honor `prefers-reduced-motion` by skipping the proof rise."
+    ],
+    "donts": [
+      "Don't introduce a second chromatic color, an accent fill, or an accent page wash.",
+      "Don't restage the operate workbench as a landing-page hero, device mock, or default SaaS shell.",
+      "Don't add ambient card shadows or hover lift to chrome; loft stays on thumbs and the drawer.",
+      "Don't fade disabled controls — recolor them (mute type, silver or mute border).",
+      "Don't invent a painted role for Pewter (`s4`) just because the step exists; leave the ladder intact."
+    ]
+  }
+}
